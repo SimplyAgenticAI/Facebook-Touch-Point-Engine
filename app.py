@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, session, url_for
+from flask import Flask, request, redirect, session
 import sqlite3
 from datetime import datetime, timedelta
 
@@ -54,7 +54,7 @@ def init_db():
         )
         conn.commit()
 
-    # Upgrade old DBs if needed
+    # Upgrade old DB if needed
     columns = [row["name"] for row in conn.execute("PRAGMA table_info(touchpoints)").fetchall()]
     if "posts" not in columns:
         conn.execute("ALTER TABLE touchpoints ADD COLUMN posts INTEGER NOT NULL DEFAULT 0")
@@ -66,6 +66,39 @@ def init_db():
 
 
 init_db()
+
+
+def safe_int(value):
+    try:
+        return int(value or 0)
+    except:
+        return 0
+
+
+def totals_from_rows(rows):
+    total = 0
+    comments = 0
+    dms = 0
+    reactions = 0
+    friends = 0
+    posts = 0
+
+    for r in rows:
+        comments += r["comments"]
+        dms += r["dms"]
+        reactions += r["reactions"]
+        friends += r["friends"]
+        posts += r["posts"]
+        total += r["comments"] + r["dms"] + r["reactions"] + r["friends"] + r["posts"]
+
+    return {
+        "total": total,
+        "comments": comments,
+        "dms": dms,
+        "reactions": reactions,
+        "friends": friends,
+        "posts": posts
+    }
 
 
 def render_page(title, body_html):
@@ -112,7 +145,7 @@ def render_page(title, body_html):
             }}
 
             .wrap {{
-                max-width: 1220px;
+                max-width: 1260px;
                 margin: 0 auto;
             }}
 
@@ -204,7 +237,14 @@ def render_page(title, body_html):
             .grid-2 {{
                 display: grid;
                 gap: 18px;
-                grid-template-columns: 1.05fr 1.4fr;
+                grid-template-columns: 1fr 1fr;
+                align-items: start;
+            }}
+
+            .grid-3 {{
+                display: grid;
+                gap: 18px;
+                grid-template-columns: 1fr 1fr 1fr;
                 align-items: start;
             }}
 
@@ -249,25 +289,11 @@ def render_page(title, body_html):
                 font-size: 13px;
             }}
 
-            .accent-purple {{
-                box-shadow: inset 0 0 0 1px rgba(168,85,247,0.14);
-            }}
-
-            .accent-blue {{
-                box-shadow: inset 0 0 0 1px rgba(56,189,248,0.14);
-            }}
-
-            .accent-pink {{
-                box-shadow: inset 0 0 0 1px rgba(236,72,153,0.14);
-            }}
-
-            .accent-green {{
-                box-shadow: inset 0 0 0 1px rgba(34,197,94,0.14);
-            }}
-
-            .accent-gold {{
-                box-shadow: inset 0 0 0 1px rgba(251,191,36,0.14);
-            }}
+            .accent-purple {{ box-shadow: inset 0 0 0 1px rgba(168,85,247,0.14); }}
+            .accent-blue {{ box-shadow: inset 0 0 0 1px rgba(56,189,248,0.14); }}
+            .accent-pink {{ box-shadow: inset 0 0 0 1px rgba(236,72,153,0.14); }}
+            .accent-green {{ box-shadow: inset 0 0 0 1px rgba(34,197,94,0.14); }}
+            .accent-gold {{ box-shadow: inset 0 0 0 1px rgba(251,191,36,0.14); }}
 
             label {{
                 display: block;
@@ -320,9 +346,20 @@ def render_page(title, body_html):
                 box-shadow: none;
             }}
 
+            .btn.green {{
+                background: linear-gradient(135deg, #16a34a, #22c55e);
+                box-shadow: 0 8px 24px rgba(34,197,94,0.22);
+            }}
+
+            .btn.pink {{
+                background: linear-gradient(135deg, #db2777, #ec4899);
+                box-shadow: 0 8px 24px rgba(236,72,153,0.22);
+            }}
+
             .btn.gold {{
-                background: linear-gradient(135deg, #f59e0b, #fbbf24);
+                background: linear-gradient(135deg, #d97706, #fbbf24);
                 color: #111827;
+                box-shadow: 0 8px 24px rgba(251,191,36,0.22);
             }}
 
             .btn-row {{
@@ -330,6 +367,20 @@ def render_page(title, body_html):
                 gap: 10px;
                 flex-wrap: wrap;
                 margin-top: 8px;
+            }}
+
+            .quick-grid {{
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                gap: 10px;
+            }}
+
+            .quick-form {{
+                margin: 0;
+            }}
+
+            .quick-form button {{
+                width: 100%;
             }}
 
             .alert {{
@@ -348,12 +399,6 @@ def render_page(title, body_html):
             .alert.success {{
                 background: rgba(34,197,94,0.15);
                 border: 1px solid rgba(34,197,94,0.30);
-            }}
-
-            .mini-grid {{
-                display: grid;
-                gap: 14px;
-                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
             }}
 
             table {{
@@ -420,8 +465,18 @@ def render_page(title, body_html):
                 margin-top: 14px;
             }}
 
-            @media (max-width: 900px) {{
-                .grid-2 {{
+            .selected-client {{
+                padding: 10px 12px;
+                border-radius: 14px;
+                background: rgba(255,255,255,0.06);
+                border: 1px solid rgba(255,255,255,0.12);
+                display: inline-block;
+                font-weight: 700;
+                margin-bottom: 10px;
+            }}
+
+            @media (max-width: 1000px) {{
+                .grid-2, .grid-3 {{
                     grid-template-columns: 1fr;
                 }}
             }}
@@ -472,39 +527,6 @@ def render_page(title, body_html):
     """
 
 
-def safe_int(value):
-    try:
-        return int(value or 0)
-    except:
-        return 0
-
-
-def totals_from_rows(rows):
-    total = 0
-    comments = 0
-    dms = 0
-    reactions = 0
-    friends = 0
-    posts = 0
-
-    for r in rows:
-        comments += r["comments"]
-        dms += r["dms"]
-        reactions += r["reactions"]
-        friends += r["friends"]
-        posts += r["posts"]
-        total += r["comments"] + r["dms"] + r["reactions"] + r["friends"] + r["posts"]
-
-    return {
-        "total": total,
-        "comments": comments,
-        "dms": dms,
-        "reactions": reactions,
-        "friends": friends,
-        "posts": posts
-    }
-
-
 @app.route("/", methods=["GET", "POST"])
 def login():
     message = ""
@@ -540,7 +562,7 @@ def login():
         <div class="login-content">
             <div class="brand-wrap" style="text-align:center;">
                 <div class="brand">Lucid Mage Command Center</div>
-                <div class="sub">Manual Facebook touchpoint tracking with a stronger client-facing visual dashboard.</div>
+                <div class="sub">Manual Facebook touchpoint tracking with an operator dashboard.</div>
             </div>
 
             <div class="section">
@@ -641,18 +663,14 @@ def admin():
         return redirect("/")
 
     message = ""
+    selected_client = request.values.get("selected_client", "").strip()
 
     if request.method == "POST":
-        client = request.form.get("client", "").strip()
-        comments = safe_int(request.form.get("comments"))
-        dms = safe_int(request.form.get("dms"))
-        reactions = safe_int(request.form.get("reactions"))
-        friends = safe_int(request.form.get("friends"))
-        posts = safe_int(request.form.get("posts"))
-        notes = request.form.get("notes", "").strip()
+        action = request.form.get("action", "").strip()
+        client = request.form.get("client", "").strip() or selected_client
 
         if not client:
-            message = '<div class="alert error">Please select a client username.</div>'
+            message = '<div class="alert error">Please select a client first.</div>'
         else:
             conn = get_db()
             client_user = conn.execute(
@@ -663,21 +681,57 @@ def admin():
             if not client_user:
                 message = '<div class="alert error">That client account does not exist yet. Create it first.</div>'
             else:
-                conn.execute("""
-                    INSERT INTO touchpoints (client, comments, dms, reactions, friends, posts, notes, date)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    client,
-                    comments,
-                    dms,
-                    reactions,
-                    friends,
-                    posts,
-                    notes,
-                    datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                ))
-                conn.commit()
-                message = '<div class="alert success">Touchpoints added successfully.</div>'
+                selected_client = client
+
+                if action == "quick_add":
+                    metric = request.form.get("metric", "").strip()
+                    notes = request.form.get("notes", "").strip()
+
+                    comments = 1 if metric == "comments" else 0
+                    dms = 1 if metric == "dms" else 0
+                    reactions = 1 if metric == "reactions" else 0
+                    friends = 1 if metric == "friends" else 0
+                    posts = 1 if metric == "posts" else 0
+
+                    conn.execute("""
+                        INSERT INTO touchpoints (client, comments, dms, reactions, friends, posts, notes, date)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        client,
+                        comments,
+                        dms,
+                        reactions,
+                        friends,
+                        posts,
+                        notes,
+                        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    ))
+                    conn.commit()
+                    message = f'<div class="alert success">Added +1 {metric} for {client}.</div>'
+
+                elif action == "save_batch":
+                    comments = safe_int(request.form.get("comments"))
+                    dms = safe_int(request.form.get("dms"))
+                    reactions = safe_int(request.form.get("reactions"))
+                    friends = safe_int(request.form.get("friends"))
+                    posts = safe_int(request.form.get("posts"))
+                    notes = request.form.get("notes", "").strip()
+
+                    conn.execute("""
+                        INSERT INTO touchpoints (client, comments, dms, reactions, friends, posts, notes, date)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        client,
+                        comments,
+                        dms,
+                        reactions,
+                        friends,
+                        posts,
+                        notes,
+                        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    ))
+                    conn.commit()
+                    message = f'<div class="alert success">Saved activity batch for {client}.</div>'
 
             conn.close()
 
@@ -690,17 +744,34 @@ def admin():
         SELECT client, comments, dms, reactions, friends, posts, notes, date
         FROM touchpoints
         ORDER BY id DESC
-        LIMIT 25
+        LIMIT 30
     """).fetchall()
-    conn.close()
 
     metrics = totals_from_rows(recent_rows)
 
-    rows_html = ""
+    today_rows = []
+    today_metrics = {"total": 0, "comments": 0, "dms": 0, "reactions": 0, "friends": 0, "posts": 0}
+
+    if selected_client:
+        start_today = datetime.now().strftime("%Y-%m-%d")
+        today_rows = conn.execute("""
+            SELECT * FROM touchpoints
+            WHERE client = ? AND date LIKE ?
+            ORDER BY id DESC
+        """, (selected_client, f"{start_today}%")).fetchall()
+        today_metrics = totals_from_rows(today_rows)
+
+    conn.close()
+
+    client_options = "".join(
+        [f'<option value="{c["username"]}" {"selected" if c["username"] == selected_client else ""}>{c["username"]}</option>' for c in clients]
+    )
+
+    recent_html = ""
     for row in recent_rows:
         row_total = row["comments"] + row["dms"] + row["reactions"] + row["friends"] + row["posts"]
         note_preview = (row["notes"][:40] + "...") if row["notes"] and len(row["notes"]) > 40 else (row["notes"] or "")
-        rows_html += f"""
+        recent_html += f"""
         <tr>
             <td>{row["client"]}</td>
             <td>{row["date"]}</td>
@@ -713,23 +784,31 @@ def admin():
             <td>{note_preview}</td>
         </tr>
         """
+    if not recent_html:
+        recent_html = '<tr><td colspan="9" class="empty">No touchpoints logged yet.</td></tr>'
 
-    if not rows_html:
-        rows_html = """
+    today_html = ""
+    for row in today_rows:
+        row_total = row["comments"] + row["dms"] + row["reactions"] + row["friends"] + row["posts"]
+        today_html += f"""
         <tr>
-            <td colspan="9" class="empty">No touchpoints logged yet.</td>
+            <td>{row["date"]}</td>
+            <td>{row["comments"]}</td>
+            <td>{row["dms"]}</td>
+            <td>{row["reactions"]}</td>
+            <td>{row["friends"]}</td>
+            <td>{row["posts"]}</td>
+            <td>{row_total}</td>
         </tr>
         """
-
-    client_options = "".join(
-        [f'<option value="{c["username"]}">{c["username"]}</option>' for c in clients]
-    )
+    if not today_html:
+        today_html = '<tr><td colspan="7" class="empty">No activity logged yet for this client today.</td></tr>'
 
     body = f"""
     <div class="topbar">
         <div class="brand-wrap">
             <div class="brand">Lucid Mage Command Center</div>
-            <div class="sub">Operator panel for logging manual Facebook activity and showing compounding client momentum.</div>
+            <div class="sub">Operator panel for logging daily Facebook actions fast.</div>
         </div>
         <div class="action-row">
             <a class="btn secondary" href="/create-account">Create Client Account</a>
@@ -741,7 +820,7 @@ def admin():
         <div class="stat accent-purple">
             <div class="stat-label">Recent Total Touchpoints</div>
             <div class="stat-value">{metrics["total"]}</div>
-            <div class="stat-hint">Sum of all recent logged activity</div>
+            <div class="stat-hint">Latest activity across all clients</div>
         </div>
         <div class="stat accent-blue">
             <div class="stat-label">Comments</div>
@@ -765,79 +844,175 @@ def admin():
         </div>
     </div>
 
-    <div class="section grid-2">
-        <div class="card">
-            <div class="panel-title">Log Touchpoints</div>
-            <div class="panel-sub">Manually enter the work completed for a specific client.</div>
-            {message}
+    <div class="section card">
+        <div class="panel-title">Choose Client</div>
+        <div class="panel-sub">Select who you are logging work for today.</div>
+        <form method="GET">
+            <label>Client Username</label>
+            <select name="selected_client">
+                <option value="">Select a client</option>
+                {client_options}
+            </select>
+            <div class="btn-row">
+                <button class="btn" type="submit">Load Client Workspace</button>
+            </div>
+        </form>
+    </div>
 
+    <div class="section">
+        {message}
+    </div>
+
+    <div class="grid-3 section">
+        <div class="card">
+            <div class="panel-title">Quick Add Buttons</div>
+            <div class="panel-sub">Fast one-tap logging while you work.</div>
+            <div class="selected-client">Selected client: {selected_client if selected_client else "None selected"}</div>
+
+            <div class="quick-grid">
+                <form method="POST" class="quick-form">
+                    <input type="hidden" name="action" value="quick_add">
+                    <input type="hidden" name="client" value="{selected_client}">
+                    <input type="hidden" name="metric" value="comments">
+                    <button class="btn" type="submit">+1 Comment</button>
+                </form>
+
+                <form method="POST" class="quick-form">
+                    <input type="hidden" name="action" value="quick_add">
+                    <input type="hidden" name="client" value="{selected_client}">
+                    <input type="hidden" name="metric" value="dms">
+                    <button class="btn pink" type="submit">+1 DM</button>
+                </form>
+
+                <form method="POST" class="quick-form">
+                    <input type="hidden" name="action" value="quick_add">
+                    <input type="hidden" name="client" value="{selected_client}">
+                    <input type="hidden" name="metric" value="reactions">
+                    <button class="btn green" type="submit">+1 Reaction</button>
+                </form>
+
+                <form method="POST" class="quick-form">
+                    <input type="hidden" name="action" value="quick_add">
+                    <input type="hidden" name="client" value="{selected_client}">
+                    <input type="hidden" name="metric" value="friends">
+                    <button class="btn gold" type="submit">+1 Friend Request</button>
+                </form>
+
+                <form method="POST" class="quick-form">
+                    <input type="hidden" name="action" value="quick_add">
+                    <input type="hidden" name="client" value="{selected_client}">
+                    <input type="hidden" name="metric" value="posts">
+                    <button class="btn secondary" type="submit">+1 Post</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="panel-title">Batch Log Entry</div>
+            <div class="panel-sub">Enter a full activity block for the day.</div>
             <form method="POST">
+                <input type="hidden" name="action" value="save_batch">
+
                 <label>Client Username</label>
                 <select name="client">
                     <option value="">Select a client</option>
                     {client_options}
                 </select>
 
-                <div class="mini-grid">
-                    <div>
-                        <label>Comments</label>
-                        <input name="comments" type="number" min="0" value="0" />
-                    </div>
-                    <div>
-                        <label>DMs</label>
-                        <input name="dms" type="number" min="0" value="0" />
-                    </div>
-                    <div>
-                        <label>Reactions</label>
-                        <input name="reactions" type="number" min="0" value="0" />
-                    </div>
-                    <div>
-                        <label>Friend Requests</label>
-                        <input name="friends" type="number" min="0" value="0" />
-                    </div>
-                    <div>
-                        <label>Posts</label>
-                        <input name="posts" type="number" min="0" value="0" />
-                    </div>
-                </div>
+                <label>Comments</label>
+                <input name="comments" type="number" min="0" value="0" />
+
+                <label>DMs</label>
+                <input name="dms" type="number" min="0" value="0" />
+
+                <label>Reactions</label>
+                <input name="reactions" type="number" min="0" value="0" />
+
+                <label>Friend Requests</label>
+                <input name="friends" type="number" min="0" value="0" />
+
+                <label>Posts</label>
+                <input name="posts" type="number" min="0" value="0" />
 
                 <label>Notes</label>
-                <textarea name="notes" placeholder="Optional note about what was done, where it was done, or any results noticed..."></textarea>
+                <textarea name="notes" placeholder="Optional note about what you did..."></textarea>
 
                 <div class="btn-row">
-                    <button class="btn" type="submit">Save Activity</button>
+                    <button class="btn" type="submit">Save Activity Batch</button>
                 </div>
             </form>
         </div>
 
         <div class="card">
-            <div class="panel-title">How the Numbers Read</div>
-            <div class="panel-sub">Translate simple actions into stronger client-facing meaning.</div>
+            <div class="panel-title">Today Summary</div>
+            <div class="panel-sub">Live totals for the selected client today.</div>
+            <div class="selected-client">Selected client: {selected_client if selected_client else "None selected"}</div>
 
-            <span class="pill">Comments = visibility placements</span>
-            <span class="pill">DMs = direct conversations</span>
-            <span class="pill">Reactions = engagement signals</span>
-            <span class="pill">Friend Requests = network growth</span>
-            <span class="pill">Posts = authority assets</span>
+            <div class="grid">
+                <div class="stat accent-purple">
+                    <div class="stat-label">Today Total</div>
+                    <div class="stat-value">{today_metrics["total"]}</div>
+                </div>
+                <div class="stat accent-blue">
+                    <div class="stat-label">Comments</div>
+                    <div class="stat-value">{today_metrics["comments"]}</div>
+                </div>
+                <div class="stat accent-pink">
+                    <div class="stat-label">DMs</div>
+                    <div class="stat-value">{today_metrics["dms"]}</div>
+                </div>
+                <div class="stat accent-green">
+                    <div class="stat-label">Reactions</div>
+                    <div class="stat-value">{today_metrics["reactions"]}</div>
+                </div>
+                <div class="stat accent-gold">
+                    <div class="stat-label">Friends</div>
+                    <div class="stat-value">{today_metrics["friends"]}</div>
+                </div>
+                <div class="stat accent-purple">
+                    <div class="stat-label">Posts</div>
+                    <div class="stat-value">{today_metrics["posts"]}</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            <div class="section note-box">
-This dashboard is designed to make manual work feel visible, measurable, and compounding.
+    <div class="section grid-2">
+        <div class="card">
+            <div class="panel-title">Today's Activity Log</div>
+            <div class="panel-sub">Only for the selected client.</div>
+            <table>
+                <tr>
+                    <th>Date</th>
+                    <th>Comments</th>
+                    <th>DMs</th>
+                    <th>Reactions</th>
+                    <th>Friends</th>
+                    <th>Posts</th>
+                    <th>Total</th>
+                </tr>
+                {today_html}
+            </table>
+        </div>
 
-You are not just logging random tasks.
-You are showing daily momentum across:
-- conversation creation
-- visibility expansion
-- network building
-- content consistency
+        <div class="card">
+            <div class="panel-title">How to Use This</div>
+            <div class="panel-sub">Simple operating flow.</div>
+            <div class="note-box">
+1. Create client accounts.
+2. Load a client workspace.
+3. Use quick-add buttons while doing work.
+4. Use batch entry when logging a whole session at once.
+5. Let the client dashboard show daily, weekly, and monthly momentum.
 
-That is what makes the offer feel like a system instead of loose activity.
+This is the operational version.
             </div>
         </div>
     </div>
 
     <div class="section card">
-        <div class="panel-title">Recent Activity Log</div>
-        <div class="panel-sub">Latest manually entered touchpoints across all clients.</div>
+        <div class="panel-title">Recent Activity Across All Clients</div>
+        <div class="panel-sub">Latest logged entries.</div>
         <table>
             <tr>
                 <th>Client</th>
@@ -850,7 +1025,7 @@ That is what makes the offer feel like a system instead of loose activity.
                 <th>Total</th>
                 <th>Notes</th>
             </tr>
-            {rows_html}
+            {recent_html}
         </table>
     </div>
     """
@@ -893,8 +1068,6 @@ def client():
             week_total += row_total
         if row_date >= month_ago:
             month_total += row_total
-
-        note_html = f'<div class="note-box" style="margin-top:8px;">{r["notes"]}</div>' if r["notes"] else ""
 
         table_rows += f"""
         <tr>
