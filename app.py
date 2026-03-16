@@ -54,7 +54,6 @@ def init_db():
         )
         conn.commit()
 
-    # Upgrade old DB if needed
     columns = [row["name"] for row in conn.execute("PRAGMA table_info(touchpoints)").fetchall()]
     if "posts" not in columns:
         conn.execute("ALTER TABLE touchpoints ADD COLUMN posts INTEGER NOT NULL DEFAULT 0")
@@ -68,13 +67,6 @@ def init_db():
 init_db()
 
 
-def safe_int(value):
-    try:
-        return int(value or 0)
-    except:
-        return 0
-
-
 def totals_from_rows(rows):
     total = 0
     comments = 0
@@ -84,12 +76,12 @@ def totals_from_rows(rows):
     posts = 0
 
     for r in rows:
-        comments += r["comments"]
-        dms += r["dms"]
-        reactions += r["reactions"]
-        friends += r["friends"]
-        posts += r["posts"]
-        total += r["comments"] + r["dms"] + r["reactions"] + r["friends"] + r["posts"]
+        comments += int(r["comments"])
+        dms += int(r["dms"])
+        reactions += int(r["reactions"])
+        friends += int(r["friends"])
+        posts += int(r["posts"])
+        total += int(r["comments"]) + int(r["dms"]) + int(r["reactions"]) + int(r["friends"]) + int(r["posts"])
 
     return {
         "total": total,
@@ -123,7 +115,6 @@ def render_page(title, body_html):
                 --text: #f8fafc;
                 --muted: #cbd5e1;
                 --purple: #a855f7;
-                --violet: #7c3aed;
                 --blue: #38bdf8;
                 --pink: #ec4899;
                 --green: #22c55e;
@@ -145,7 +136,7 @@ def render_page(title, body_html):
             }}
 
             .wrap {{
-                max-width: 1260px;
+                max-width: 1280px;
                 margin: 0 auto;
             }}
 
@@ -158,16 +149,9 @@ def render_page(title, body_html):
                 margin-bottom: 20px;
             }}
 
-            .brand-wrap {{
-                display: flex;
-                flex-direction: column;
-                gap: 6px;
-            }}
-
             .brand {{
                 font-size: 34px;
                 font-weight: 800;
-                letter-spacing: 0.4px;
                 background: linear-gradient(90deg, #ffffff, #c084fc, #7dd3fc);
                 -webkit-background-clip: text;
                 -webkit-text-fill-color: transparent;
@@ -176,12 +160,7 @@ def render_page(title, body_html):
             .sub {{
                 color: var(--muted);
                 font-size: 14px;
-            }}
-
-            .action-row {{
-                display: flex;
-                gap: 10px;
-                flex-wrap: wrap;
+                margin-top: 6px;
             }}
 
             .card {{
@@ -195,37 +174,9 @@ def render_page(title, body_html):
                     inset 0 1px 0 rgba(255,255,255,0.05);
             }}
 
-            .panel-title {{
-                font-size: 22px;
-                font-weight: 800;
-                margin: 0 0 8px 0;
-            }}
-
-            .panel-sub {{
-                color: var(--muted);
-                margin-bottom: 18px;
-                font-size: 14px;
-            }}
-
             .login-card {{
                 max-width: 540px;
                 margin: 48px auto;
-                position: relative;
-                overflow: hidden;
-            }}
-
-            .login-card::before {{
-                content: "";
-                position: absolute;
-                inset: -1px;
-                background: linear-gradient(135deg, rgba(168,85,247,0.30), rgba(56,189,248,0.20), rgba(236,72,153,0.18));
-                filter: blur(30px);
-                z-index: 0;
-            }}
-
-            .login-content {{
-                position: relative;
-                z-index: 1;
             }}
 
             .grid {{
@@ -237,15 +188,7 @@ def render_page(title, body_html):
             .grid-2 {{
                 display: grid;
                 gap: 18px;
-                grid-template-columns: 1fr 1fr;
-                align-items: start;
-            }}
-
-            .grid-3 {{
-                display: grid;
-                gap: 18px;
-                grid-template-columns: 1fr 1fr 1fr;
-                align-items: start;
+                grid-template-columns: 1.1fr 1fr;
             }}
 
             .stat {{
@@ -253,26 +196,12 @@ def render_page(title, body_html):
                 border: 1px solid var(--line);
                 border-radius: 20px;
                 padding: 18px;
-                min-height: 120px;
-                position: relative;
-                overflow: hidden;
-            }}
-
-            .stat::after {{
-                content: "";
-                position: absolute;
-                top: -20px;
-                right: -20px;
-                width: 90px;
-                height: 90px;
-                border-radius: 999px;
-                background: radial-gradient(circle, rgba(168,85,247,0.18), transparent 70%);
             }}
 
             .stat-label {{
                 color: var(--muted);
                 font-size: 13px;
-                margin-bottom: 12px;
+                margin-bottom: 10px;
                 text-transform: uppercase;
                 letter-spacing: 0.7px;
             }}
@@ -280,20 +209,19 @@ def render_page(title, body_html):
             .stat-value {{
                 font-size: 34px;
                 font-weight: 900;
-                line-height: 1;
-                margin-bottom: 8px;
             }}
 
-            .stat-hint {{
-                color: #94a3b8;
-                font-size: 13px;
+            .panel-title {{
+                font-size: 22px;
+                font-weight: 800;
+                margin: 0 0 8px 0;
             }}
 
-            .accent-purple {{ box-shadow: inset 0 0 0 1px rgba(168,85,247,0.14); }}
-            .accent-blue {{ box-shadow: inset 0 0 0 1px rgba(56,189,248,0.14); }}
-            .accent-pink {{ box-shadow: inset 0 0 0 1px rgba(236,72,153,0.14); }}
-            .accent-green {{ box-shadow: inset 0 0 0 1px rgba(34,197,94,0.14); }}
-            .accent-gold {{ box-shadow: inset 0 0 0 1px rgba(251,191,36,0.14); }}
+            .panel-sub {{
+                color: var(--muted);
+                margin-bottom: 18px;
+                font-size: 14px;
+            }}
 
             label {{
                 display: block;
@@ -317,18 +245,13 @@ def render_page(title, body_html):
 
             textarea {{
                 resize: vertical;
-                min-height: 92px;
-            }}
-
-            input::placeholder, textarea::placeholder {{
-                color: #94a3b8;
+                min-height: 90px;
             }}
 
             .btn {{
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
-                gap: 8px;
                 padding: 12px 18px;
                 border-radius: 14px;
                 border: none;
@@ -348,39 +271,12 @@ def render_page(title, body_html):
 
             .btn.green {{
                 background: linear-gradient(135deg, #16a34a, #22c55e);
-                box-shadow: 0 8px 24px rgba(34,197,94,0.22);
-            }}
-
-            .btn.pink {{
-                background: linear-gradient(135deg, #db2777, #ec4899);
-                box-shadow: 0 8px 24px rgba(236,72,153,0.22);
-            }}
-
-            .btn.gold {{
-                background: linear-gradient(135deg, #d97706, #fbbf24);
-                color: #111827;
-                box-shadow: 0 8px 24px rgba(251,191,36,0.22);
             }}
 
             .btn-row {{
                 display: flex;
                 gap: 10px;
                 flex-wrap: wrap;
-                margin-top: 8px;
-            }}
-
-            .quick-grid {{
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-                gap: 10px;
-            }}
-
-            .quick-form {{
-                margin: 0;
-            }}
-
-            .quick-form button {{
-                width: 100%;
             }}
 
             .alert {{
@@ -401,12 +297,62 @@ def render_page(title, body_html):
                 border: 1px solid rgba(34,197,94,0.30);
             }}
 
+            .tracker-grid {{
+                display: grid;
+                gap: 14px;
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            }}
+
+            .tracker-box {{
+                background: rgba(255,255,255,0.05);
+                border: 1px solid rgba(255,255,255,0.10);
+                border-radius: 18px;
+                padding: 16px;
+                text-align: center;
+            }}
+
+            .tracker-name {{
+                color: var(--muted);
+                font-size: 13px;
+                margin-bottom: 10px;
+                text-transform: uppercase;
+                letter-spacing: 0.6px;
+            }}
+
+            .tracker-count {{
+                font-size: 34px;
+                font-weight: 900;
+                margin-bottom: 12px;
+            }}
+
+            .counter-row {{
+                display: flex;
+                gap: 10px;
+            }}
+
+            .counter-btn {{
+                flex: 1;
+                padding: 12px;
+                border: none;
+                border-radius: 12px;
+                cursor: pointer;
+                font-weight: 900;
+                font-size: 20px;
+                color: white;
+            }}
+
+            .minus {{
+                background: rgba(239,68,68,0.85);
+            }}
+
+            .plus {{
+                background: rgba(34,197,94,0.85);
+            }}
+
             table {{
                 width: 100%;
                 border-collapse: collapse;
                 margin-top: 8px;
-                overflow: hidden;
-                border-radius: 16px;
             }}
 
             th, td {{
@@ -423,60 +369,18 @@ def render_page(title, body_html):
                 font-size: 12px;
             }}
 
-            tr:hover td {{
-                background: rgba(255,255,255,0.03);
-            }}
-
-            .section {{
-                margin-top: 18px;
-            }}
-
-            .pill {{
-                display: inline-block;
-                padding: 7px 10px;
-                border-radius: 999px;
-                background: rgba(255,255,255,0.07);
-                border: 1px solid var(--line);
-                color: var(--muted);
-                font-size: 12px;
-                margin-right: 8px;
-                margin-bottom: 8px;
-            }}
-
-            .note-box {{
-                background: rgba(255,255,255,0.04);
-                border: 1px solid rgba(255,255,255,0.08);
-                padding: 14px;
-                border-radius: 16px;
-                color: #dbeafe;
-                text-align: left;
-                white-space: pre-wrap;
-            }}
-
             .empty {{
                 color: var(--muted);
                 text-align: center;
                 padding: 24px 10px;
             }}
 
-            .footer-hint {{
-                color: #94a3b8;
-                font-size: 13px;
-                margin-top: 14px;
+            .section {{
+                margin-top: 18px;
             }}
 
-            .selected-client {{
-                padding: 10px 12px;
-                border-radius: 14px;
-                background: rgba(255,255,255,0.06);
-                border: 1px solid rgba(255,255,255,0.12);
-                display: inline-block;
-                font-weight: 700;
-                margin-bottom: 10px;
-            }}
-
-            @media (max-width: 1000px) {{
-                .grid-2, .grid-3 {{
+            @media (max-width: 900px) {{
+                .grid-2 {{
                     grid-template-columns: 1fr;
                 }}
             }}
@@ -490,29 +394,11 @@ def render_page(title, body_html):
                     font-size: 26px;
                 }}
 
-                .card {{
-                    padding: 18px;
-                    border-radius: 18px;
-                }}
-
-                .stat {{
-                    min-height: 105px;
-                }}
-
-                .stat-value {{
-                    font-size: 28px;
-                }}
-
-                th, td {{
-                    font-size: 12px;
-                    padding: 10px 6px;
-                }}
-
                 .btn {{
                     width: 100%;
                 }}
 
-                .action-row {{
+                .btn-row {{
                     width: 100%;
                 }}
             }}
@@ -559,33 +445,29 @@ def login():
 
     body = f"""
     <div class="card login-card">
-        <div class="login-content">
-            <div class="brand-wrap" style="text-align:center;">
-                <div class="brand">Lucid Mage Command Center</div>
-                <div class="sub">Manual Facebook touchpoint tracking with an operator dashboard.</div>
+        <div class="brand" style="text-align:center;">Lucid Mage Command Center</div>
+        <div class="sub" style="text-align:center;">Manual Facebook touchpoint tracking dashboard</div>
+
+        <div class="section">
+            {success_message}
+            {message}
+        </div>
+
+        <form method="POST">
+            <label>Username</label>
+            <input name="username" placeholder="Enter username" />
+
+            <label>Password</label>
+            <input name="password" type="password" placeholder="Enter password" />
+
+            <div class="btn-row">
+                <button class="btn" type="submit">Login</button>
+                <a class="btn secondary" href="/create-account">Create Account</a>
             </div>
+        </form>
 
-            <div class="section">
-                {success_message}
-                {message}
-            </div>
-
-            <form method="POST">
-                <label>Username</label>
-                <input name="username" placeholder="Enter username" />
-
-                <label>Password</label>
-                <input name="password" type="password" placeholder="Enter password" />
-
-                <div class="btn-row">
-                    <button class="btn" type="submit">Login</button>
-                    <a class="btn secondary" href="/create-account">Create Account</a>
-                </div>
-            </form>
-
-            <div class="footer-hint">
-                Default admin login: <strong>jeff</strong> / <strong>lucidmage</strong>
-            </div>
+        <div class="sub" style="margin-top:16px;">
+            Default admin login: <strong>jeff</strong> / <strong>lucidmage</strong>
         </div>
     </div>
     """
@@ -626,32 +508,26 @@ def create_account():
 
     body = f"""
     <div class="card login-card">
-        <div class="login-content">
-            <div class="brand-wrap" style="text-align:center;">
-                <div class="brand">Create Client Account</div>
-                <div class="sub">Add a client login for their private dashboard.</div>
+        <div class="brand" style="text-align:center;">Create Client Account</div>
+        <div class="sub" style="text-align:center;">Add a client login for their private dashboard</div>
+
+        <div class="section">{message}</div>
+
+        <form method="POST">
+            <label>Username</label>
+            <input name="username" placeholder="Choose a username" />
+
+            <label>Password</label>
+            <input name="password" type="password" placeholder="Choose a password" />
+
+            <label>Confirm Password</label>
+            <input name="confirm_password" type="password" placeholder="Confirm password" />
+
+            <div class="btn-row">
+                <button class="btn" type="submit">Create Account</button>
+                <a class="btn secondary" href="/">Back to Login</a>
             </div>
-
-            <div class="section">
-                {message}
-            </div>
-
-            <form method="POST">
-                <label>Username</label>
-                <input name="username" placeholder="Choose a username" />
-
-                <label>Password</label>
-                <input name="password" type="password" placeholder="Choose a password" />
-
-                <label>Confirm Password</label>
-                <input name="confirm_password" type="password" placeholder="Confirm password" />
-
-                <div class="btn-row">
-                    <button class="btn" type="submit">Create Account</button>
-                    <a class="btn secondary" href="/">Back to Login</a>
-                </div>
-            </form>
-        </div>
+        </form>
     </div>
     """
     return render_page("Create Account", body)
@@ -663,36 +539,38 @@ def admin():
         return redirect("/")
 
     message = ""
-    selected_client = request.values.get("selected_client", "").strip()
+
+    if "selected_client" not in session:
+        session["selected_client"] = ""
 
     if request.method == "POST":
         action = request.form.get("action", "").strip()
-        client = request.form.get("client", "").strip() or selected_client
 
-        if not client:
-            message = '<div class="alert error">Please select a client first.</div>'
-        else:
-            conn = get_db()
-            client_user = conn.execute(
-                "SELECT * FROM users WHERE username = ? AND role = 'client'",
-                (client,)
-            ).fetchone()
-
-            if not client_user:
-                message = '<div class="alert error">That client account does not exist yet. Create it first.</div>'
+        if action == "set_client":
+            selected_client = request.form.get("selected_client", "").strip()
+            session["selected_client"] = selected_client
+            if selected_client:
+                message = f'<div class="alert success">Loaded workspace for {selected_client}.</div>'
             else:
-                selected_client = client
+                message = '<div class="alert error">Please choose a client.</div>'
 
-                if action == "quick_add":
-                    metric = request.form.get("metric", "").strip()
-                    notes = request.form.get("notes", "").strip()
+        elif action == "save_session":
+            client = session.get("selected_client", "").strip()
+            comments = int(request.form.get("comments", 0))
+            dms = int(request.form.get("dms", 0))
+            reactions = int(request.form.get("reactions", 0))
+            friends = int(request.form.get("friends", 0))
+            posts = int(request.form.get("posts", 0))
+            notes = request.form.get("notes", "").strip()
 
-                    comments = 1 if metric == "comments" else 0
-                    dms = 1 if metric == "dms" else 0
-                    reactions = 1 if metric == "reactions" else 0
-                    friends = 1 if metric == "friends" else 0
-                    posts = 1 if metric == "posts" else 0
-
+            if not client:
+                message = '<div class="alert error">Select a client first.</div>'
+            else:
+                total = comments + dms + reactions + friends + posts
+                if total <= 0 and not notes:
+                    message = '<div class="alert error">Add at least one task before saving.</div>'
+                else:
+                    conn = get_db()
                     conn.execute("""
                         INSERT INTO touchpoints (client, comments, dms, reactions, friends, posts, notes, date)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -707,33 +585,10 @@ def admin():
                         datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     ))
                     conn.commit()
-                    message = f'<div class="alert success">Added +1 {metric} for {client}.</div>'
+                    conn.close()
+                    message = f'<div class="alert success">Saved session for {client}.</div>'
 
-                elif action == "save_batch":
-                    comments = safe_int(request.form.get("comments"))
-                    dms = safe_int(request.form.get("dms"))
-                    reactions = safe_int(request.form.get("reactions"))
-                    friends = safe_int(request.form.get("friends"))
-                    posts = safe_int(request.form.get("posts"))
-                    notes = request.form.get("notes", "").strip()
-
-                    conn.execute("""
-                        INSERT INTO touchpoints (client, comments, dms, reactions, friends, posts, notes, date)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    """, (
-                        client,
-                        comments,
-                        dms,
-                        reactions,
-                        friends,
-                        posts,
-                        notes,
-                        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    ))
-                    conn.commit()
-                    message = f'<div class="alert success">Saved activity batch for {client}.</div>'
-
-            conn.close()
+    selected_client = session.get("selected_client", "").strip()
 
     conn = get_db()
     clients = conn.execute(
@@ -747,21 +602,21 @@ def admin():
         LIMIT 30
     """).fetchall()
 
-    metrics = totals_from_rows(recent_rows)
-
     today_rows = []
     today_metrics = {"total": 0, "comments": 0, "dms": 0, "reactions": 0, "friends": 0, "posts": 0}
 
     if selected_client:
-        start_today = datetime.now().strftime("%Y-%m-%d")
+        today_prefix = datetime.now().strftime("%Y-%m-%d")
         today_rows = conn.execute("""
             SELECT * FROM touchpoints
             WHERE client = ? AND date LIKE ?
             ORDER BY id DESC
-        """, (selected_client, f"{start_today}%")).fetchall()
+        """, (selected_client, f"{today_prefix}%")).fetchall()
         today_metrics = totals_from_rows(today_rows)
 
     conn.close()
+
+    recent_metrics = totals_from_rows(recent_rows)
 
     client_options = "".join(
         [f'<option value="{c["username"]}" {"selected" if c["username"] == selected_client else ""}>{c["username"]}</option>' for c in clients]
@@ -770,7 +625,6 @@ def admin():
     recent_html = ""
     for row in recent_rows:
         row_total = row["comments"] + row["dms"] + row["reactions"] + row["friends"] + row["posts"]
-        note_preview = (row["notes"][:40] + "...") if row["notes"] and len(row["notes"]) > 40 else (row["notes"] or "")
         recent_html += f"""
         <tr>
             <td>{row["client"]}</td>
@@ -781,11 +635,10 @@ def admin():
             <td>{row["friends"]}</td>
             <td>{row["posts"]}</td>
             <td>{row_total}</td>
-            <td>{note_preview}</td>
         </tr>
         """
     if not recent_html:
-        recent_html = '<tr><td colspan="9" class="empty">No touchpoints logged yet.</td></tr>'
+        recent_html = '<tr><td colspan="8" class="empty">No activity logged yet.</td></tr>'
 
     today_html = ""
     for row in today_rows:
@@ -802,52 +655,50 @@ def admin():
         </tr>
         """
     if not today_html:
-        today_html = '<tr><td colspan="7" class="empty">No activity logged yet for this client today.</td></tr>'
+        today_html = '<tr><td colspan="7" class="empty">No activity logged today for this client.</td></tr>'
 
     body = f"""
     <div class="topbar">
-        <div class="brand-wrap">
+        <div>
             <div class="brand">Lucid Mage Command Center</div>
-            <div class="sub">Operator panel for logging daily Facebook actions fast.</div>
+            <div class="sub">Manual operator dashboard for Facebook touchpoint tracking</div>
         </div>
-        <div class="action-row">
+        <div class="btn-row">
             <a class="btn secondary" href="/create-account">Create Client Account</a>
             <a class="btn secondary" href="/logout">Logout</a>
         </div>
     </div>
 
     <div class="grid">
-        <div class="stat accent-purple">
+        <div class="stat">
             <div class="stat-label">Recent Total Touchpoints</div>
-            <div class="stat-value">{metrics["total"]}</div>
-            <div class="stat-hint">Latest activity across all clients</div>
+            <div class="stat-value">{recent_metrics["total"]}</div>
         </div>
-        <div class="stat accent-blue">
+        <div class="stat">
             <div class="stat-label">Comments</div>
-            <div class="stat-value">{metrics["comments"]}</div>
-            <div class="stat-hint">Visibility placements</div>
+            <div class="stat-value">{recent_metrics["comments"]}</div>
         </div>
-        <div class="stat accent-pink">
+        <div class="stat">
             <div class="stat-label">DMs</div>
-            <div class="stat-value">{metrics["dms"]}</div>
-            <div class="stat-hint">Private conversations started</div>
+            <div class="stat-value">{recent_metrics["dms"]}</div>
         </div>
-        <div class="stat accent-green">
+        <div class="stat">
             <div class="stat-label">Reactions</div>
-            <div class="stat-value">{metrics["reactions"]}</div>
-            <div class="stat-hint">Engagement signals sent</div>
+            <div class="stat-value">{recent_metrics["reactions"]}</div>
         </div>
-        <div class="stat accent-gold">
+        <div class="stat">
             <div class="stat-label">Friend Requests</div>
-            <div class="stat-value">{metrics["friends"]}</div>
-            <div class="stat-hint">Network expansion moves</div>
+            <div class="stat-value">{recent_metrics["friends"]}</div>
         </div>
     </div>
 
+    <div class="section">{message}</div>
+
     <div class="section card">
-        <div class="panel-title">Choose Client</div>
-        <div class="panel-sub">Select who you are logging work for today.</div>
-        <form method="GET">
+        <div class="panel-title">Select Client Workspace</div>
+        <div class="panel-sub">Choose the client you are working on. It stays selected until you change it.</div>
+        <form method="POST">
+            <input type="hidden" name="action" value="set_client" />
             <label>Client Username</label>
             <select name="selected_client">
                 <option value="">Select a client</option>
@@ -857,119 +708,109 @@ def admin():
                 <button class="btn" type="submit">Load Client Workspace</button>
             </div>
         </form>
-    </div>
-
-    <div class="section">
-        {message}
-    </div>
-
-    <div class="grid-3 section">
-        <div class="card">
-            <div class="panel-title">Quick Add Buttons</div>
-            <div class="panel-sub">Fast one-tap logging while you work.</div>
-            <div class="selected-client">Selected client: {selected_client if selected_client else "None selected"}</div>
-
-            <div class="quick-grid">
-                <form method="POST" class="quick-form">
-                    <input type="hidden" name="action" value="quick_add">
-                    <input type="hidden" name="client" value="{selected_client}">
-                    <input type="hidden" name="metric" value="comments">
-                    <button class="btn" type="submit">+1 Comment</button>
-                </form>
-
-                <form method="POST" class="quick-form">
-                    <input type="hidden" name="action" value="quick_add">
-                    <input type="hidden" name="client" value="{selected_client}">
-                    <input type="hidden" name="metric" value="dms">
-                    <button class="btn pink" type="submit">+1 DM</button>
-                </form>
-
-                <form method="POST" class="quick-form">
-                    <input type="hidden" name="action" value="quick_add">
-                    <input type="hidden" name="client" value="{selected_client}">
-                    <input type="hidden" name="metric" value="reactions">
-                    <button class="btn green" type="submit">+1 Reaction</button>
-                </form>
-
-                <form method="POST" class="quick-form">
-                    <input type="hidden" name="action" value="quick_add">
-                    <input type="hidden" name="client" value="{selected_client}">
-                    <input type="hidden" name="metric" value="friends">
-                    <button class="btn gold" type="submit">+1 Friend Request</button>
-                </form>
-
-                <form method="POST" class="quick-form">
-                    <input type="hidden" name="action" value="quick_add">
-                    <input type="hidden" name="client" value="{selected_client}">
-                    <input type="hidden" name="metric" value="posts">
-                    <button class="btn secondary" type="submit">+1 Post</button>
-                </form>
-            </div>
+        <div class="sub" style="margin-top:12px;">
+            Current client: <strong>{selected_client if selected_client else "None selected"}</strong>
         </div>
+    </div>
 
+    <div class="section grid-2">
         <div class="card">
-            <div class="panel-title">Batch Log Entry</div>
-            <div class="panel-sub">Enter a full activity block for the day.</div>
-            <form method="POST">
-                <input type="hidden" name="action" value="save_batch">
+            <div class="panel-title">Manual Task Tracker</div>
+            <div class="panel-sub">Use the plus and minus buttons, then save the session.</div>
 
-                <label>Client Username</label>
-                <select name="client">
-                    <option value="">Select a client</option>
-                    {client_options}
-                </select>
+            <form method="POST" id="sessionForm">
+                <input type="hidden" name="action" value="save_session" />
+                <input type="hidden" name="comments" id="comments_input" value="0" />
+                <input type="hidden" name="dms" id="dms_input" value="0" />
+                <input type="hidden" name="reactions" id="reactions_input" value="0" />
+                <input type="hidden" name="friends" id="friends_input" value="0" />
+                <input type="hidden" name="posts" id="posts_input" value="0" />
 
-                <label>Comments</label>
-                <input name="comments" type="number" min="0" value="0" />
+                <div class="tracker-grid">
+                    <div class="tracker-box">
+                        <div class="tracker-name">Comments</div>
+                        <div class="tracker-count" id="comments_count">0</div>
+                        <div class="counter-row">
+                            <button type="button" class="counter-btn minus" onclick="changeCount('comments', -1)">−</button>
+                            <button type="button" class="counter-btn plus" onclick="changeCount('comments', 1)">+</button>
+                        </div>
+                    </div>
 
-                <label>DMs</label>
-                <input name="dms" type="number" min="0" value="0" />
+                    <div class="tracker-box">
+                        <div class="tracker-name">DMs</div>
+                        <div class="tracker-count" id="dms_count">0</div>
+                        <div class="counter-row">
+                            <button type="button" class="counter-btn minus" onclick="changeCount('dms', -1)">−</button>
+                            <button type="button" class="counter-btn plus" onclick="changeCount('dms', 1)">+</button>
+                        </div>
+                    </div>
 
-                <label>Reactions</label>
-                <input name="reactions" type="number" min="0" value="0" />
+                    <div class="tracker-box">
+                        <div class="tracker-name">Reactions</div>
+                        <div class="tracker-count" id="reactions_count">0</div>
+                        <div class="counter-row">
+                            <button type="button" class="counter-btn minus" onclick="changeCount('reactions', -1)">−</button>
+                            <button type="button" class="counter-btn plus" onclick="changeCount('reactions', 1)">+</button>
+                        </div>
+                    </div>
 
-                <label>Friend Requests</label>
-                <input name="friends" type="number" min="0" value="0" />
+                    <div class="tracker-box">
+                        <div class="tracker-name">Friend Requests</div>
+                        <div class="tracker-count" id="friends_count">0</div>
+                        <div class="counter-row">
+                            <button type="button" class="counter-btn minus" onclick="changeCount('friends', -1)">−</button>
+                            <button type="button" class="counter-btn plus" onclick="changeCount('friends', 1)">+</button>
+                        </div>
+                    </div>
 
-                <label>Posts</label>
-                <input name="posts" type="number" min="0" value="0" />
+                    <div class="tracker-box">
+                        <div class="tracker-name">Posts</div>
+                        <div class="tracker-count" id="posts_count">0</div>
+                        <div class="counter-row">
+                            <button type="button" class="counter-btn minus" onclick="changeCount('posts', -1)">−</button>
+                            <button type="button" class="counter-btn plus" onclick="changeCount('posts', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
 
-                <label>Notes</label>
-                <textarea name="notes" placeholder="Optional note about what you did..."></textarea>
+                <div class="section">
+                    <label>Notes</label>
+                    <textarea name="notes" placeholder="Optional note about what you worked on"></textarea>
+                </div>
 
                 <div class="btn-row">
-                    <button class="btn" type="submit">Save Activity Batch</button>
+                    <button class="btn green" type="submit">Save Session</button>
+                    <button class="btn secondary" type="button" onclick="resetCounts()">Reset</button>
                 </div>
             </form>
         </div>
 
         <div class="card">
             <div class="panel-title">Today Summary</div>
-            <div class="panel-sub">Live totals for the selected client today.</div>
-            <div class="selected-client">Selected client: {selected_client if selected_client else "None selected"}</div>
+            <div class="panel-sub">Live totals already saved today for the selected client.</div>
 
             <div class="grid">
-                <div class="stat accent-purple">
+                <div class="stat">
                     <div class="stat-label">Today Total</div>
                     <div class="stat-value">{today_metrics["total"]}</div>
                 </div>
-                <div class="stat accent-blue">
+                <div class="stat">
                     <div class="stat-label">Comments</div>
                     <div class="stat-value">{today_metrics["comments"]}</div>
                 </div>
-                <div class="stat accent-pink">
+                <div class="stat">
                     <div class="stat-label">DMs</div>
                     <div class="stat-value">{today_metrics["dms"]}</div>
                 </div>
-                <div class="stat accent-green">
+                <div class="stat">
                     <div class="stat-label">Reactions</div>
                     <div class="stat-value">{today_metrics["reactions"]}</div>
                 </div>
-                <div class="stat accent-gold">
+                <div class="stat">
                     <div class="stat-label">Friends</div>
                     <div class="stat-value">{today_metrics["friends"]}</div>
                 </div>
-                <div class="stat accent-purple">
+                <div class="stat">
                     <div class="stat-label">Posts</div>
                     <div class="stat-value">{today_metrics["posts"]}</div>
                 </div>
@@ -980,7 +821,6 @@ def admin():
     <div class="section grid-2">
         <div class="card">
             <div class="panel-title">Today's Activity Log</div>
-            <div class="panel-sub">Only for the selected client.</div>
             <table>
                 <tr>
                     <th>Date</th>
@@ -996,38 +836,46 @@ def admin():
         </div>
 
         <div class="card">
-            <div class="panel-title">How to Use This</div>
-            <div class="panel-sub">Simple operating flow.</div>
-            <div class="note-box">
-1. Create client accounts.
-2. Load a client workspace.
-3. Use quick-add buttons while doing work.
-4. Use batch entry when logging a whole session at once.
-5. Let the client dashboard show daily, weekly, and monthly momentum.
-
-This is the operational version.
-            </div>
+            <div class="panel-title">Recent Activity Across All Clients</div>
+            <table>
+                <tr>
+                    <th>Client</th>
+                    <th>Date</th>
+                    <th>Comments</th>
+                    <th>DMs</th>
+                    <th>Reactions</th>
+                    <th>Friends</th>
+                    <th>Posts</th>
+                    <th>Total</th>
+                </tr>
+                {recent_html}
+            </table>
         </div>
     </div>
 
-    <div class="section card">
-        <div class="panel-title">Recent Activity Across All Clients</div>
-        <div class="panel-sub">Latest logged entries.</div>
-        <table>
-            <tr>
-                <th>Client</th>
-                <th>Date</th>
-                <th>Comments</th>
-                <th>DMs</th>
-                <th>Reactions</th>
-                <th>Friends</th>
-                <th>Posts</th>
-                <th>Total</th>
-                <th>Notes</th>
-            </tr>
-            {recent_html}
-        </table>
-    </div>
+    <script>
+        const counts = {{
+            comments: 0,
+            dms: 0,
+            reactions: 0,
+            friends: 0,
+            posts: 0
+        }};
+
+        function changeCount(name, amount) {{
+            counts[name] = Math.max(0, counts[name] + amount);
+            document.getElementById(name + "_count").innerText = counts[name];
+            document.getElementById(name + "_input").value = counts[name];
+        }}
+
+        function resetCounts() {{
+            for (const key in counts) {{
+                counts[key] = 0;
+                document.getElementById(key + "_count").innerText = 0;
+                document.getElementById(key + "_input").value = 0;
+            }}
+        }}
+    </script>
     """
     return render_page("Admin Dashboard", body)
 
@@ -1090,69 +938,59 @@ def client():
 
     body = f"""
     <div class="topbar">
-        <div class="brand-wrap">
+        <div>
             <div class="brand">{username} Growth Dashboard</div>
-            <div class="sub">Your Facebook touchpoint progress, tracked and updated manually.</div>
+            <div class="sub">Your Facebook touchpoint progress, tracked manually</div>
         </div>
-        <div class="action-row">
+        <div class="btn-row">
             <a class="btn secondary" href="/logout">Logout</a>
         </div>
     </div>
 
     <div class="grid">
-        <div class="stat accent-purple">
+        <div class="stat">
             <div class="stat-label">Today</div>
             <div class="stat-value">{today_total}</div>
-            <div class="stat-hint">Today's total touchpoints</div>
         </div>
-        <div class="stat accent-blue">
+        <div class="stat">
             <div class="stat-label">Last 7 Days</div>
             <div class="stat-value">{week_total}</div>
-            <div class="stat-hint">Weekly momentum</div>
         </div>
-        <div class="stat accent-pink">
+        <div class="stat">
             <div class="stat-label">Last 30 Days</div>
             <div class="stat-value">{month_total}</div>
-            <div class="stat-hint">Monthly compounding activity</div>
         </div>
-        <div class="stat accent-gold">
+        <div class="stat">
             <div class="stat-label">All-Time Total</div>
             <div class="stat-value">{totals["total"]}</div>
-            <div class="stat-hint">Cumulative growth actions</div>
         </div>
     </div>
 
     <div class="section grid">
-        <div class="stat accent-blue">
+        <div class="stat">
             <div class="stat-label">Comments</div>
             <div class="stat-value">{totals["comments"]}</div>
-            <div class="stat-hint">Visibility placements</div>
         </div>
-        <div class="stat accent-pink">
+        <div class="stat">
             <div class="stat-label">DMs</div>
             <div class="stat-value">{totals["dms"]}</div>
-            <div class="stat-hint">Direct conversations</div>
         </div>
-        <div class="stat accent-green">
+        <div class="stat">
             <div class="stat-label">Reactions</div>
             <div class="stat-value">{totals["reactions"]}</div>
-            <div class="stat-hint">Engagement signals</div>
         </div>
-        <div class="stat accent-gold">
+        <div class="stat">
             <div class="stat-label">Friend Requests</div>
             <div class="stat-value">{totals["friends"]}</div>
-            <div class="stat-hint">Network expansion</div>
         </div>
-        <div class="stat accent-purple">
+        <div class="stat">
             <div class="stat-label">Posts</div>
             <div class="stat-value">{totals["posts"]}</div>
-            <div class="stat-hint">Authority assets published</div>
         </div>
     </div>
 
     <div class="section card">
         <div class="panel-title">Activity Log</div>
-        <div class="panel-sub">Every manually entered session and touchpoint batch.</div>
         <table>
             <tr>
                 <th>Date</th>
