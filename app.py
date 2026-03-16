@@ -118,7 +118,6 @@ def render_page(title, body_html):
                 --blue: #38bdf8;
                 --pink: #ec4899;
                 --green: #22c55e;
-                --gold: #fbbf24;
             }}
 
             body {{
@@ -611,11 +610,11 @@ def admin():
             WHERE client = ? AND date LIKE ?
             ORDER BY id DESC
         """, (selected_client, f"{today_prefix}%")).fetchall()
-        today_metrics = totals_from_rows(today_rows)
 
     conn.close()
 
     recent_metrics = totals_from_rows(recent_rows)
+    today_metrics = totals_from_rows(today_rows)
 
     client_options = "".join(
         [f'<option value="{c["username"]}" {"selected" if c["username"] == selected_client else ""}>{c["username"]}</option>' for c in clients]
