@@ -4609,13 +4609,22 @@ HTML = r"""
 
     .topbar{
       position: sticky; top: 0; z-index: 60;
-      min-height:72px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap;
-      gap:12px 18px;
-      padding:12px 18px;
-      background: linear-gradient(180deg, rgba(10,18,34,.96), rgba(10,18,34,.88));
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      padding:14px 18px 12px 18px;
+      background: linear-gradient(180deg, rgba(10,18,34,.98), rgba(10,18,34,.92));
       border-bottom:1px solid var(--line);
       backdrop-filter: blur(14px);
       box-shadow: 0 10px 30px rgba(0,0,0,.22);
+    }
+    .topbarMain{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px 16px;
+      flex-wrap:wrap;
+      min-width:0;
     }
     .brand{ display:flex; gap:12px; align-items:center; font-weight:800; letter-spacing:.2px; font-size:18px; flex:0 0 auto; }
     .dot{
@@ -4623,16 +4632,53 @@ HTML = r"""
       background: radial-gradient(circle at 30% 30%, #fff, #7c3aed);
       box-shadow: 0 0 14px rgba(124,58,237,.55);
     }
-    .rightmeta{ display:flex; gap:10px; align-items:center; font-size:14px; color:var(--muted); flex-wrap:wrap; justify-content:flex-end; flex:1 1 820px; }
-    .btn{
-      border:1px solid var(--line);
-      background: linear-gradient(180deg, rgba(21,33,59,.96), rgba(14,24,44,.96));
-      color:var(--text);
-      padding:11px 14px;
-      border-radius:13px;
-      cursor:pointer;
+    .topbarMeta{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+      min-width:0;
+      color:var(--muted);
+      font-size:14px;
+    }
+    #modelTag{
       font-size:14px;
       font-weight:700;
+      color: var(--muted2);
+      padding: 8px 12px;
+      border-radius: 999px;
+      border:1px solid rgba(151,170,255,.18);
+      background: rgba(12,20,36,.88);
+      white-space:nowrap;
+    }
+    .actionRail{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      overflow-x:auto;
+      overflow-y:hidden;
+      padding: 2px 2px 4px 2px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(167,139,250,.45) rgba(15,23,42,.35);
+    }
+    .actionRail::-webkit-scrollbar{ height: 10px; }
+    .actionRail::-webkit-scrollbar-track{ background: rgba(15,23,42,.35); border-radius:999px; }
+    .actionRail::-webkit-scrollbar-thumb{ background: rgba(167,139,250,.45); border-radius:999px; }
+    .actionRail .btn,
+    .topbarMeta .btn,
+    .actionRail a.btn{
+      flex:0 0 auto;
+    }
+    .btn{
+      border:1px solid var(--line);
+      background: linear-gradient(180deg, rgba(21,33,59,.98), rgba(14,24,44,.98));
+      color:var(--text);
+      padding:12px 15px;
+      border-radius:13px;
+      cursor:pointer;
+      font-size:15px;
+      font-weight:800;
       line-height:1.2;
       white-space:nowrap;
     }
@@ -4659,7 +4705,7 @@ HTML = r"""
       height: calc(100vh - var(--topbar-h));
       min-height: calc(100vh - var(--topbar-h));
       display:grid;
-      grid-template-columns: minmax(0, 1fr) minmax(340px, 420px);
+      grid-template-columns: minmax(0, 1fr) minmax(310px, 360px);
       align-items:stretch;
       overflow:hidden;
     }
@@ -4676,8 +4722,8 @@ HTML = r"""
 
     .tableWrap{
       position:relative;
-      width:min(860px, calc(100vw - 420px - 48px), calc(100vh - var(--topbar-h) - 170px));
-      height:min(860px, calc(100vw - 420px - 48px), calc(100vh - var(--topbar-h) - 170px));
+      width:min(860px, calc(100vw - 360px - 44px), calc(100vh - var(--topbar-h) - 168px));
+      height:min(860px, calc(100vw - 360px - 44px), calc(100vh - var(--topbar-h) - 168px));
       min-width: 520px;
       min-height: 520px;
       margin-bottom: 0;
@@ -5028,7 +5074,7 @@ HTML = r"""
     .followBox{ height: 92px; }
 
     .underTable{
-      width: min(860px, calc(100vw - 420px - 48px), calc(100vh - var(--topbar-h) - 170px));
+      width: min(860px, calc(100vw - 360px - 44px), calc(100vh - var(--topbar-h) - 168px));
       min-width: 520px;
       margin: 0 auto 24px auto;
       padding: 0 0 18px 0;
@@ -5089,34 +5135,33 @@ HTML = r"""
 
     .overlay{
       position:fixed; inset:0; display:none;
-      align-items:flex-start; justify-content:center;
-      padding-top: 68px;
-      background: rgba(7,10,20,.65);
-      backdrop-filter: blur(8px);
+      align-items:stretch; justify-content:stretch;
+      padding:0;
+      background: rgba(7,10,20,.72);
+      backdrop-filter: blur(10px);
       z-index: 80;
     }
     .overlay.show{ display:flex; }
 
     .modal{
       position: fixed;
-      left: 50%;
-      top: 64px;
-      transform: translateX(-50%);
-      width: 860px;
-      max-width: calc(100vw - 22px);
-      height: 680px;
-      max-height: calc(100vh - 90px);
-      background: rgba(14,22,48,.92);
-      border: 1px solid rgba(42,58,106,.9);
-      border-radius: 18px;
-      padding: 12px;
-      box-shadow: 0 0 60px rgba(0,0,0,.45);
+      left: 14px;
+      top: calc(var(--topbar-h) + 14px);
+      width: calc(100vw - 28px);
+      height: calc(100vh - var(--topbar-h) - 28px);
+      max-width: none;
+      max-height: none;
+      background: linear-gradient(180deg, rgba(14,22,48,.97), rgba(10,16,34,.97));
+      border: 1px solid rgba(74,92,156,.72);
+      border-radius: 22px;
+      padding: 14px;
+      box-shadow: 0 20px 80px rgba(0,0,0,.45);
       display: flex;
       flex-direction: column;
-      resize: both;
+      resize: none;
       overflow: hidden;
-      min-width: 560px;
-      min-height: 420px;
+      min-width: 0;
+      min-height: 0;
       z-index: 90;
     }
 
@@ -5125,11 +5170,11 @@ HTML = r"""
       align-items:center;
       justify-content:space-between;
       gap:10px;
-      padding: 8px 10px;
-      border-radius: 14px;
-      border: 1px solid rgba(42,58,106,.7);
-      background: rgba(7,10,20,.45);
-      cursor: move;
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(74,92,156,.62);
+      background: linear-gradient(180deg, rgba(16,25,50,.98), rgba(10,18,36,.96));
+      cursor: default;
       user-select:none;
     }
 
@@ -5150,13 +5195,13 @@ HTML = r"""
     }
 
     .modalBodyWrap{
-      margin-top: 10px;
+      margin-top: 12px;
       flex: 1 1 auto;
       overflow: auto;
-      border-radius: 14px;
-      border: 1px solid rgba(42,58,106,.6);
-      background: rgba(7,10,20,.45);
-      padding: 10px;
+      border-radius: 16px;
+      border: 1px solid rgba(74,92,156,.45);
+      background: rgba(9,14,28,.72);
+      padding: 16px;
     }
 
     .modal pre{
@@ -5204,8 +5249,9 @@ HTML = r"""
       display:none;
     }
 
-    .modal.minimized{ height: auto !important; resize: none !important; overflow: hidden !important; }
-    .modal.minimized .modalBodyWrap{ display:none; }
+    .modal.minimized{ height: calc(100vh - var(--topbar-h) - 28px) !important; resize: none !important; overflow: hidden !important; }
+    .modal.minimized .modalBodyWrap{ display:flex; }
+    #minModal, #restoreModal{ display:none !important; }
 
     .pillRow{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
 
@@ -5239,7 +5285,7 @@ HTML = r"""
       .row2{ grid-template-columns: 1fr; }
       .underTable{ width: min(860px, 92vw); }
       .modalForm .grid{ grid-template-columns: 1fr; }
-      .modal{ width: calc(100vw - 22px); }
+      .modal{ left: 10px; top: calc(var(--topbar-h) + 10px); width: calc(100vw - 20px); height: calc(100vh - var(--topbar-h) - 20px); border-radius: 18px; }
       .modalBarTitle{ max-width: 240px; }
     }
   
@@ -5247,9 +5293,10 @@ HTML = r"""
     /* Mobile responsiveness */
     @media (max-width: 720px){
       body{ overflow-x:hidden; }
-      .topbar{ height:auto; }
-      .topbarInner{ flex-wrap:wrap; height:auto; gap:10px; padding:10px 12px; }
-      .rightmeta{ justify-content:flex-start; }
+      .topbar{ padding:12px 12px 10px 12px; }
+      .topbarMain{ align-items:flex-start; }
+      .topbarMeta{ justify-content:flex-start; }
+      .actionRail{ padding-bottom: 6px; }
       .stage{ grid-template-columns: 1fr !important; }
       .side{ padding: 0 12px 22px 12px; }
       .sideCard{ position: relative; top:auto; max-height:none; }
@@ -5630,7 +5677,8 @@ HTML = r"""
 
 @media (max-width: 720px){
   /* keep top brand, move actions to bottom bar + drawer */
-  .rightmeta{ display:none !important; }
+  .topbarMeta{ display:none !important; }
+  .actionRail{ display:none !important; }
   .mobileBar{
     display:flex;
     position:fixed;
@@ -6002,24 +6050,28 @@ html, body{ max-width:100%; overflow-x:hidden !important; }
 </head>
 <body>
   <div class="topbar">
-    <div class="brand">
-      <div class="dot"></div>
-      <div>{{app_title}}</div>
+    <div class="topbarMain">
+      <div class="brand">
+        <div class="dot"></div>
+        <div>{{app_title}}</div>
+      </div>
+      <div class="topbarMeta">
+        <div id="modelTag">Model: {{model}}</div>
+        <a class="btn" href="/logout" style="text-decoration:none; display:inline-block;">Logout</a>
+      </div>
     </div>
-    <div class="rightmeta">
-      <div id="modelTag">Model: {{model}}</div>
+    <div class="actionRail" aria-label="Primary actions">
       <button class="btn" id="assembleBtn">Assemble all</button>
       <button class="btn" id="frameworkBtn">Core framework</button>
       <button class="btn" id="manageTeamBtn">Add or dismiss teammates</button>
       <button class="btn" id="createTeamBtn">Create teammate</button>
       <button class="btn" id="installFullBtn">Install full team</button>
       <button class="btn" id="settingsBtn">Settings</button>
-            <button class="btn" id="calendarBtn">Calendar</button>
-<button class="btn" id="crmBtn">Client Center</button>
-<button class="btn" id="imageLibBtn">Image Library</button>
+      <button class="btn" id="calendarBtn">Calendar</button>
+      <button class="btn" id="crmBtn">Client Center</button>
+      <button class="btn" id="imageLibBtn">Image Library</button>
       <button class="btn" id="onboardingBtn" title="Guided onboarding checklist">Next step</button>
-            <button class="btn" id="openApiKeyHelpBtn" title="How to get and set your OpenAI API key">Get your OpenAI key</button>
-      <a class="btn" href="/logout" style="text-decoration:none; display:inline-block;">Logout</a>
+      <button class="btn" id="openApiKeyHelpBtn" title="How to get and set your OpenAI API key">Get your OpenAI key</button>
     </div>
   </div>
 
@@ -7207,54 +7259,21 @@ function applyModalPos(){
       const win = $("modalWin");
       if(!win) return;
 
-      const saved = loadModalPos();
-      const savedSize = loadModalSize();
+      const rootStyles = getComputedStyle(document.documentElement);
+      const topbarH = parseFloat(rootStyles.getPropertyValue("--topbar-h")) || 96;
+      const margin = window.innerWidth <= 720 ? 8 : 14;
+      const top = Math.max(margin, Math.round(topbarH + margin));
+      const width = Math.max(320, (window.innerWidth || 1200) - (margin * 2));
+      const height = Math.max(320, (window.innerHeight || 800) - top - margin);
 
-      if(savedSize){
-        // Clamp saved size so windows never reopen tiny.
-        const maxW = Math.max(620, (window.innerWidth || 1200) - 24);
-        const maxH = Math.max(520, (window.innerHeight || 800) - 120);
-        const w = Math.min(Math.max(760, savedSize.width), maxW);
-        const h = Math.min(Math.max(560, savedSize.height), maxH);
-        win.style.width = w + "px";
-        win.style.height = h + "px";
-      } else {
-        // Sensible defaults (no manual resizing needed)
-        const w = Math.min(860, Math.max(760, (window.innerWidth || 1200) - 24));
-        const h = Math.min(680, Math.max(560, (window.innerHeight || 800) - 120));
-        win.style.width = w + "px";
-        win.style.height = h + "px";
-      }
+      win.style.transform = "none";
+      win.style.left = margin + "px";
+      win.style.top = top + "px";
+      win.style.width = width + "px";
+      win.style.height = height + "px";
 
-      // If we have a saved position, clamp it so the modal never renders off-screen.
-      if(saved){
-        win.style.transform = "none";
-
-        // Use current rendered size (after applying savedSize above) to clamp.
-        const mw = Math.max(360, win.offsetWidth || 520);
-        const mh = Math.max(260, win.offsetHeight || 420);
-
-        const margin = 12;
-        const maxLeft = Math.max(margin, (window.innerWidth || 1200) - mw - margin);
-        const maxTop  = Math.max(margin, (window.innerHeight || 800) - mh - margin);
-
-        const left = Math.min(Math.max(saved.left, margin), maxLeft);
-        const top  = Math.min(Math.max(saved.top, margin), maxTop);
-
-        win.style.left = left + "px";
-        win.style.top  = top + "px";
-
-        // If the saved position was out-of-bounds, persist the corrected one.
-        if(left !== saved.left || top !== saved.top){
-          saveModalPos(left, top);
-        }
-        return;
-      }
-
-      // Default centered position
-      win.style.left = "50%";
-      win.style.top = "80px";
-      win.style.transform = "translateX(-50%)";
+      try{ saveModalSize({width, height}); }catch(e){}
+      try{ saveModalPos(margin, top); }catch(e){}
     }
 
     function hideAllModalForms(){
@@ -7423,23 +7442,22 @@ function showModal(title, body, imgUrl){
     });
 
     $("minModal").onclick = () => {
-      modalMinimized = true;
-      $("modalWin").classList.add("minimized");
-      $("minModal").style.display = "none";
-      $("restoreModal").style.display = "inline-block";
+      modalMinimized = false;
+      $("modalWin").classList.remove("minimized");
+      applyModalPos();
     };
 
     $("restoreModal").onclick = () => {
       modalMinimized = false;
       $("modalWin").classList.remove("minimized");
-      $("minModal").style.display = "inline-block";
-      $("restoreModal").style.display = "none";
+      applyModalPos();
     };
 
     (function initModalDrag(){
       const bar = $("modalBar");
       const win = $("modalWin");
       if(!bar || !win) return;
+      return;
 
       let startX = 0, startY = 0;
       let startLeft = 0, startTop = 0;
