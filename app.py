@@ -454,27 +454,35 @@ def _auth_guard():
         return None
 
     if request.path.startswith("/api/") and not session.get("user"):
-        return jsonify({"ok": False, "error": "Not authenticated"}), 401
+        # Local-first bootstrap: if the session is missing (common after redeploy/restart),
+        # transparently restore a local owner user so the app remains usable without
+        # breaking Settings, Core Framework, Image Library, teammate editing, onboarding, etc.
+        try:
+            session["user"] = ensure_local_owner_user()
+        except Exception:
+            return jsonify({"ok": False, "error": "Not authenticated"}), 401
 
     if request.path == "/" and not session.get("user"):
-        if not has_any_user():
-            return redirect(url_for("setup"))
-        return redirect(url_for("login"))
+        # Local-first bootstrap on the main app page as well.
+        try:
+            session["user"] = ensure_local_owner_user()
+        except Exception:
+            if not has_any_user():
+                return redirect(url_for("setup"))
+            return redirect(url_for("login"))
 
     # attach per-user OpenAI client for this request
     u = current_user()
     user_key = ""
     if u:
         user_key = (((u.get("settings") or {}).get("openai_key")) or "").strip()
-    g.openai_client = OpenAI(api_key=user_key) if user_key else None
+    g.openai_client = OpenAI(api_key=(user_key or OPENAI_API_KEY))
 
     return None
 
 def get_openai_client():
     c = getattr(g, "openai_client", None)
-    if c is not None:
-        return c
-    raise RuntimeError("Add your OpenAI key in Settings.")
+    return c or _get_global_openai_client()
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 EMAIL_DRAFT_BLOCK_RE = re.compile(r"```email\s*([\s\S]*?)```", re.IGNORECASE)
@@ -3819,10 +3827,10 @@ AUTH_BASE_CSS = r"""
     margin:0;
     font-family: Arial, sans-serif;
     background:
-      radial-gradient(900px 700px at 20% 20%, rgba(247,211,106,.10), transparent 55%),
-      radial-gradient(1100px 900px at 50% 34%, rgba(139,92,246,.30), transparent 52%),
-      radial-gradient(900px 700px at 80% 22%, rgba(96,165,250,.18), transparent 54%),
-      linear-gradient(135deg, #120d24 0%, #1b1335 34%, #24164a 58%, #0a1120 100%);
+      radial-gradient(900px 600px at 50% 40%, rgba(247,211,106,.12), transparent 58%),
+      radial-gradient(900px 600px at 50% 52%, rgba(124,58,237,.22), transparent 55%),
+      radial-gradient(800px 600px at 50% 45%, rgba(59,130,246,.15), transparent 55%),
+      radial-gradient(1100px 800px at 50% 60%, rgba(10,14,30,.9), rgba(7,10,20,1) 65%);
     color:var(--text);
     min-height:100vh;
     display:flex;
@@ -3831,14 +3839,14 @@ AUTH_BASE_CSS = r"""
     padding: 26px 14px;
   }
   .card{
-    width: 540px;
+    width: 520px;
     max-width: calc(100vw - 22px);
-    background: linear-gradient(180deg, rgba(19,16,43,.94), rgba(13,19,40,.96));
-    border:1px solid rgba(164,137,255,.30);
-    border-radius: 20px;
-    padding: 18px;
-    box-shadow: 0 24px 80px rgba(0,0,0,.42), 0 0 36px rgba(139,92,246,.16);
-    backdrop-filter: blur(12px);
+    background: rgba(14,22,48,.82);
+    border:1px solid rgba(42,58,106,.9);
+    border-radius: 18px;
+    padding: 16px;
+    box-shadow: 0 0 60px rgba(0,0,0,.45);
+    backdrop-filter: blur(10px);
     position: relative;
     overflow: hidden;
   }
@@ -3860,30 +3868,28 @@ AUTH_BASE_CSS = r"""
     background: radial-gradient(circle at 30% 30%, #fff, #7c3aed);
     box-shadow: 0 0 14px rgba(124,58,237,.55);
   }
-  .muted{ color: #d8e1ff; font-size: 13px; font-weight:600; }
-  label{ display:block; font-size: 12px; color: #e2e9ff; margin: 10px 0 6px 0; font-weight: 800; letter-spacing:.2px; }
+  .muted{ color: var(--muted); font-size: 12px; }
+  label{ display:block; font-size: 11px; color: var(--muted); margin: 10px 0 6px 0; font-weight: 700; letter-spacing:.2px; }
   input{
     width:100%;
     border-radius: 12px;
-    border:1px solid rgba(170,147,255,.28);
-    background: rgba(9,13,29,.95);
+    border:1px solid rgba(42,58,106,.9);
+    background: rgba(11,16,36,.92);
     color: var(--text);
-    padding:12px;
+    padding:10px;
     outline:none;
-    font-size:15px;
-    line-height:1.4;
-    font-weight:600;
+    font-size:13px;
+    line-height:1.3;
   }
   .row{ display:flex; gap:10px; align-items:center; justify-content:space-between; margin-top: 12px; flex-wrap:wrap; }
   .btn{
-    border:1px solid rgba(170,147,255,.26);
-    background: linear-gradient(180deg, rgba(28,24,61,.98), rgba(17,22,45,.98));
+    border:1px solid rgba(42,58,106,.9);
+    background: rgba(11,16,36,.9);
     color:var(--text);
-    padding:11px 14px;
+    padding:10px 12px;
     border-radius:12px;
     cursor:pointer;
-    font-size:14px;
-    font-weight:700;
+    font-size:13px;
   }
   .btn:hover{ background: rgba(20,28,60,.92); }
   .btnPrimary{
@@ -4593,28 +4599,29 @@ HTML = r"""
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes"/>
   <title>{{app_title}}</title>
   <style>
-    :root{ --bg:#08111f; --bg2:#0d1728; --panel:#13203a; --panel2:#0f1a31; --panel3:#162544; --line:rgba(151,170,255,.18); --line-strong:rgba(186,162,255,.34); --text:#f5f7ff; --muted:#c8d2ff; --muted2:#dee5ff; --gold:#f7d36a; --purple:#8b5cf6; --purple2:#a78bfa; --blue:#60a5fa; --topbar-h:92px; }
+    :root{ --text:#e6edff; --muted:#b8c4ffcc; --topbarH: 172px; }
     *{box-sizing:border-box}
     html, body{ height:100%; min-height:100%; overflow:hidden; }
     body{
       margin:0;
       font-family: Arial, sans-serif;
       background:
-        radial-gradient(1200px 900px at 18% 12%, rgba(139,92,246,.18), transparent 42%),
-        radial-gradient(1100px 900px at 82% 18%, rgba(96,165,250,.12), transparent 44%),
-        radial-gradient(1200px 1000px at 50% 68%, rgba(11,21,40,.72), rgba(5,10,20,1) 72%),
-        linear-gradient(180deg, #0a1120 0%, #09111d 100%);
+        radial-gradient(900px 600px at 50% 52%, rgba(124,58,237,.22), transparent 55%),
+        radial-gradient(800px 600px at 50% 45%, rgba(59,130,246,.15), transparent 55%),
+        radial-gradient(1100px 800px at 50% 60%, rgba(10,14,30,.9), rgba(7,10,20,1) 65%);
       color:var(--text);
     }
 
     .topbar{
-      position: sticky; top: 0; z-index: 60;
+      position: sticky;
+      top: 0;
+      z-index: 60;
       display:flex;
       flex-direction:column;
       gap:12px;
-      padding:14px 18px 12px 18px;
-      background: linear-gradient(180deg, rgba(10,18,34,.98), rgba(10,18,34,.92));
-      border-bottom:1px solid var(--line);
+      padding:14px 16px 12px 16px;
+      background: linear-gradient(180deg, rgba(14,22,48,.96), rgba(14,22,48,.88));
+      border-bottom:1px solid rgba(34,49,90,.85);
       backdrop-filter: blur(14px);
       box-shadow: 0 10px 30px rgba(0,0,0,.22);
     }
@@ -4622,90 +4629,94 @@ HTML = r"""
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:12px 16px;
+      gap:12px;
       flex-wrap:wrap;
-      min-width:0;
     }
-    .brand{ display:flex; gap:12px; align-items:center; font-weight:800; letter-spacing:.2px; font-size:18px; flex:0 0 auto; }
+    .brand{ display:flex; gap:10px; align-items:center; font-weight:800; letter-spacing:.2px; font-size:18px; }
     .dot{
       width:10px;height:10px;border-radius:999px;
       background: radial-gradient(circle at 30% 30%, #fff, #7c3aed);
       box-shadow: 0 0 14px rgba(124,58,237,.55);
     }
-    .topbarMeta{
+    .rightmeta{ display:none; }
+    .topbarUtility{
       display:flex;
-      gap:10px;
       align-items:center;
       justify-content:flex-end;
-      flex-wrap:wrap;
-      min-width:0;
-      color:var(--muted);
-      font-size:14px;
-    }
-    #modelTag{
-      font-size:14px;
-      font-weight:700;
-      color: var(--muted2);
-      padding: 8px 12px;
-      border-radius: 999px;
-      border:1px solid rgba(151,170,255,.18);
-      background: rgba(12,20,36,.88);
-      white-space:nowrap;
-    }
-    .actionRail{
-      display:flex;
-      align-items:center;
       gap:10px;
-      overflow-x:auto;
-      overflow-y:hidden;
-      padding: 2px 2px 4px 2px;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(167,139,250,.45) rgba(15,23,42,.35);
+      flex-wrap:wrap;
+      margin-left:auto;
     }
-    .actionRail::-webkit-scrollbar{ height: 10px; }
-    .actionRail::-webkit-scrollbar-track{ background: rgba(15,23,42,.35); border-radius:999px; }
-    .actionRail::-webkit-scrollbar-thumb{ background: rgba(167,139,250,.45); border-radius:999px; }
-    .actionRail .btn,
-    .topbarMeta .btn,
-    .actionRail a.btn{
-      flex:0 0 auto;
+    .metaPill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 14px;
+      border-radius:999px;
+      border:1px solid rgba(72,96,168,.82);
+      background: rgba(10,16,34,.78);
+      color: var(--text);
+      font-size:13px;
+      font-weight:700;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.03), 0 10px 24px rgba(0,0,0,.18);
+    }
+    .topbarActions{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+      gap:10px;
+      width:100%;
     }
     .btn{
-      border:1px solid var(--line);
-      background: linear-gradient(180deg, rgba(21,33,59,.98), rgba(14,24,44,.98));
+      border:1px solid rgba(42,58,106,.9);
+      background: rgba(11,16,36,.9);
       color:var(--text);
-      padding:12px 15px;
-      border-radius:13px;
+      padding:10px 12px;
+      border-radius:12px;
       cursor:pointer;
-      font-size:15px;
-      font-weight:800;
+      font-size:14px;
+      font-weight:700;
       line-height:1.2;
+    }
+    .topbarActions .btn,
+    .topbarActions a.btn{
+      min-height:46px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      width:100%;
+      white-space:normal;
+    }
+    .topbarUtility .btn,
+    .topbarUtility a.btn{
+      min-height:42px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
       white-space:nowrap;
     }
-    .btn:hover{ background: linear-gradient(180deg, rgba(29,43,76,.98), rgba(18,29,55,.98)); border-color: var(--line-strong); }
+    .btn:hover{ background: rgba(20,28,60,.92); }
     .btnPrimary{
-      border:1px solid rgba(247,211,106,.48);
-      background: linear-gradient(180deg, rgba(139,92,246,.48), rgba(96,165,250,.18));
-      box-shadow: 0 0 24px rgba(139,92,246,.18), inset 0 0 0 1px rgba(247,211,106,.14);
+      border:1px solid rgba(124,58,237,.75);
+      background: linear-gradient(180deg, rgba(124,58,237,.35), rgba(59,130,246,.12));
+      box-shadow: 0 0 24px rgba(124,58,237,.18);
     }
     .btnMini{
-      padding:9px 12px;
-      font-size:13px;
-      border-radius:11px;
-      font-weight:700;
-    }
-    .btnTiny{
       padding:8px 10px;
       font-size:12px;
       border-radius:10px;
-      font-weight:700;
+    }
+    .btnTiny{
+      padding:6px 8px;
+      font-size:11px;
+      border-radius:10px;
     }
 
     .stage{
-      height: calc(100vh - var(--topbar-h));
-      min-height: calc(100vh - var(--topbar-h));
+      min-height: calc(100vh - var(--topbarH));
+      height: calc(100vh - var(--topbarH));
       display:grid;
-      grid-template-columns: minmax(0, 1fr) minmax(310px, 360px);
+      grid-template-columns: minmax(0, 1fr) 370px;
       align-items:stretch;
       overflow:hidden;
     }
@@ -4715,18 +4726,19 @@ HTML = r"""
       display:flex;
       align-items:flex-start;
       justify-content:center;
-      padding: 14px 16px 10px 16px;
-      min-height:0;
+      padding: 16px;
       overflow:auto;
+      min-height: 0;
     }
 
     .tableWrap{
       position:relative;
-      width:min(860px, calc(100vw - 360px - 44px), calc(100vh - var(--topbar-h) - 168px));
-      height:min(860px, calc(100vw - 360px - 44px), calc(100vh - var(--topbar-h) - 168px));
-      min-width: 520px;
-      min-height: 520px;
-      margin-bottom: 0;
+      width:min(840px, calc(100vw - 430px));
+      height:min(840px, calc(100vh - var(--topbarH) - 40px));
+      min-width: 620px;
+      min-height: 620px;
+      aspect-ratio: 1 / 1;
+      margin: 0 auto;
       flex: 0 0 auto;
     }
 
@@ -4784,22 +4796,21 @@ HTML = r"""
       margin-bottom:8px;
     }
     .opTitle{ display:flex; flex-direction:column; gap:2px; }
-    .opTitle .t1{ font-weight:800; font-size:16px; }
-    .opTitle .t2{ font-size:13px; color:var(--muted2); font-weight:600; }
+    .opTitle .t1{ font-weight:700; font-size:13px; }
+    .opTitle .t2{ font-size:12px; color:var(--muted); }
 
     .opText{
       width:100%;
-      height: 126px;
+      height: 118px;
       resize:none;
       border-radius: 14px;
-      border:1px solid var(--line);
-      background: rgba(9,16,30,.96);
+      border:1px solid rgba(42,58,106,.9);
+      background: rgba(11,16,36,.92);
       color: var(--text);
-      padding:12px 14px;
+      padding:10px;
       outline:none;
-      font-size:15px;
-      font-weight:600;
-      line-height:1.5;
+      font-size:13px;
+      line-height:1.3;
     }
 
     .opRow{
@@ -4968,9 +4979,9 @@ HTML = r"""
     .liveDot.waiting{ background: rgba(255,123,123,.55); box-shadow: 0 0 14px rgba(255,123,123,.22); }
 
     .seatMeta{ display:flex; flex-direction:column; gap:4px; min-width:0; flex: 1 1 auto; pointer-events:none; }
-    .seatName{ font-weight:800; font-size:14px; color:var(--text); }
-    .seatRole{ font-size:12px; color:var(--muted2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; }
-    .seatStatus{ font-size:12px; color:var(--muted2); opacity:.98; font-weight:600; }
+    .seatName{ font-weight:800; font-size:13px; }
+    .seatRole{ font-size:11px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .seatStatus{ font-size:11px; color:var(--muted); opacity:.95; }
 
     .seatTools{
       position:absolute;
@@ -4998,25 +5009,25 @@ HTML = r"""
 
     .side{
       position: sticky;
-      top: var(--topbar-h);
+      top: var(--topbarH);
       align-self:start;
-      height: calc(100vh - var(--topbar-h));
+      height: calc(100vh - var(--topbarH));
       overflow:auto;
-      border-left:1px solid var(--line);
-      background: linear-gradient(180deg, rgba(12,20,38,.96), rgba(9,16,30,.96));
-      backdrop-filter: blur(12px);
-      padding: 14px;
+      border-left:1px solid rgba(34,49,90,.8);
+      background: linear-gradient(180deg, rgba(14,22,48,.92), rgba(10,14,30,.92));
+      backdrop-filter: blur(10px);
+      padding: 12px;
       display:flex;
       flex-direction:column;
       gap: 12px;
     }
 
     .sideCard{
-      background: linear-gradient(180deg, rgba(20,31,56,.98), rgba(13,22,41,.98));
-      border:1px solid var(--line);
+      background: rgba(11,16,36,.92);
+      border:1px solid rgba(42,58,106,.9);
       border-radius: 16px;
-      padding: 14px;
-      box-shadow: 0 8px 24px rgba(0,0,0,.22);
+      padding: 12px;
+      box-shadow: 0 0 24px rgba(0,0,0,.24);
     }
 
     .sideHead{
@@ -5024,21 +5035,20 @@ HTML = r"""
       margin-bottom:10px;
     }
     .sideTitle{ display:flex; flex-direction:column; gap:2px; min-width:0; }
-    .sideTitle .h1{ font-weight:800; font-size:16px; }
-    .sideTitle .h2{ font-size:13px; color:var(--muted2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; }
+    .sideTitle .h1{ font-weight:800; }
+    .sideTitle .h2{ font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
     .thread{
-      min-height: 260px;
-      max-height: 44vh;
+      height: calc(100vh - var(--topbarH) - 356px);
+      min-height: 300px;
       overflow:auto;
-      background: rgba(8,14,26,.82);
-      border:1px solid var(--line);
+      background: rgba(7,10,20,.65);
+      border:1px solid rgba(42,58,106,.6);
       border-radius: 14px;
-      padding: 12px;
+      padding: 10px;
       font-size: 15px;
-      line-height: 1.55;
+      line-height: 1.6;
       white-space: pre-wrap;
-      font-weight:600;
     }
 
     .msg{
@@ -5051,10 +5061,10 @@ HTML = r"""
     .msg.user{ border-color: rgba(59,130,246,.35); background: rgba(59,130,246,.08); }
     .msg.assistant{ border-color: rgba(124,58,237,.35); background: rgba(124,58,237,.08); }
     .msg .who{
-      font-size: 12px;
-      color: var(--muted2);
+      font-size: 13px;
+      color: var(--text);
       margin-bottom: 6px;
-      font-weight: 800;
+      font-weight: 700;
       letter-spacing: .2px;
     }
 
@@ -5062,21 +5072,19 @@ HTML = r"""
       width:100%;
       resize:none;
       border-radius: 14px;
-      border:1px solid var(--line);
-      background: rgba(8,14,26,.9);
+      border:1px solid rgba(42,58,106,.9);
+      background: rgba(7,10,20,.75);
       color: var(--text);
-      padding:12px 14px;
+      padding:10px;
       outline:none;
-      font-size:15px;
-      font-weight:600;
-      line-height:1.45;
+      font-size:13px;
+      line-height:1.3;
     }
     .followBox{ height: 92px; }
 
     .underTable{
-      width: min(860px, calc(100vw - 360px - 44px), calc(100vh - var(--topbar-h) - 168px));
-      min-width: 520px;
-      margin: 0 auto 24px auto;
+      width: min(860px, 92vw);
+      margin: 0 auto 42px auto;
       padding: 0 0 18px 0;
     }
 
@@ -5090,12 +5098,13 @@ HTML = r"""
     }
 
     .groupReplies{
-      max-height: 48vh;
+      max-height: calc(100vh - var(--topbarH) - 250px);
+      min-height: 260px;
       overflow:auto;
-      background: rgba(8,14,26,.82);
-      border:1px solid var(--line);
+      background: rgba(7,10,20,.65);
+      border:1px solid rgba(42,58,106,.6);
       border-radius: 14px;
-      padding: 12px;
+      padding: 10px;
     }
 
     .replyItem{
@@ -5114,15 +5123,14 @@ HTML = r"""
     }
     .replyName{
       font-weight:800;
-      font-size:14px;
+      font-size:13px;
     }
     .replyBtns{ display:flex; gap:8px; flex-wrap:wrap; }
     .replyBody{
       white-space: pre-wrap;
-      font-size:15px;
-      line-height:1.55;
+      font-size:13px;
+      line-height:1.35;
       color: var(--text);
-      font-weight:600;
     }
 
     .row2{
@@ -5131,12 +5139,12 @@ HTML = r"""
       gap: 10px;
     }
 
-    .tiny{ font-size: 12px; color:var(--muted2); font-weight:600; }
+    .tiny{ font-size: 11px; color:var(--muted); }
 
     .overlay{
       position:fixed; inset:0; display:none;
-      align-items:stretch; justify-content:stretch;
-      padding:0;
+      align-items:flex-start; justify-content:center;
+      padding: calc(var(--topbarH) + 10px) 16px 16px 16px;
       background: rgba(7,10,20,.72);
       backdrop-filter: blur(10px);
       z-index: 80;
@@ -5145,17 +5153,19 @@ HTML = r"""
 
     .modal{
       position: fixed;
-      left: 14px;
-      top: calc(var(--topbar-h) + 14px);
-      width: calc(100vw - 28px);
-      height: calc(100vh - var(--topbar-h) - 28px);
+      left: 16px;
+      right: 16px;
+      top: calc(var(--topbarH) + 10px);
+      transform: none;
+      width: auto;
       max-width: none;
+      height: calc(100vh - var(--topbarH) - 26px);
       max-height: none;
-      background: linear-gradient(180deg, rgba(14,22,48,.97), rgba(10,16,34,.97));
-      border: 1px solid rgba(74,92,156,.72);
-      border-radius: 22px;
+      background: rgba(14,22,48,.96);
+      border: 1px solid rgba(42,58,106,.9);
+      border-radius: 20px;
       padding: 14px;
-      box-shadow: 0 20px 80px rgba(0,0,0,.45);
+      box-shadow: 0 18px 60px rgba(0,0,0,.45);
       display: flex;
       flex-direction: column;
       resize: none;
@@ -5170,16 +5180,16 @@ HTML = r"""
       align-items:center;
       justify-content:space-between;
       gap:10px;
-      padding: 10px 12px;
-      border-radius: 16px;
-      border: 1px solid rgba(74,92,156,.62);
-      background: linear-gradient(180deg, rgba(16,25,50,.98), rgba(10,18,36,.96));
+      padding: 8px 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(42,58,106,.7);
+      background: rgba(7,10,20,.45);
       cursor: default;
       user-select:none;
     }
 
     .modalBarTitle{
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 800;
       white-space: nowrap;
       overflow: hidden;
@@ -5192,16 +5202,18 @@ HTML = r"""
       gap:8px;
       align-items:center;
       flex-wrap:wrap;
+      justify-content:flex-end;
     }
+    #minModal, #restoreModal{ display:none !important; }
 
     .modalBodyWrap{
-      margin-top: 12px;
+      margin-top: 10px;
       flex: 1 1 auto;
       overflow: auto;
-      border-radius: 16px;
-      border: 1px solid rgba(74,92,156,.45);
-      background: rgba(9,14,28,.72);
-      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(42,58,106,.6);
+      background: rgba(7,10,20,.45);
+      padding: 10px;
     }
 
     .modal pre{
@@ -5211,9 +5223,8 @@ HTML = r"""
       background: transparent;
       border: 0;
       padding: 0;
-      font-size: 15px;
-      line-height: 1.55;
-      font-weight:600;
+      font-size: 13px;
+      line-height: 1.35;
     }
 
     .modalForm{ display:none; background: transparent; border:0; border-radius:0; padding:0; }
@@ -5229,16 +5240,16 @@ HTML = r"""
     .modalForm input, .modalForm textarea{
       width:100%;
       border-radius: 12px;
-      border:1px solid var(--line);
-      background: rgba(11,16,36,.96);
+      border:1px solid rgba(42,58,106,.9);
+      background: rgba(11,16,36,.92);
       color: var(--text);
-      padding:12px;
+      padding:10px;
       outline:none;
       font-size:15px;
-      font-weight:600;
       line-height:1.45;
+      font-weight:600;
     }
-    .modalForm textarea{ height: 96px; resize: vertical; }
+    .modalForm textarea{ height: 120px; resize: vertical; }
     .modalForm .actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; align-items:center; justify-content:flex-end; }
 
     .imgPreview{
@@ -5249,9 +5260,8 @@ HTML = r"""
       display:none;
     }
 
-    .modal.minimized{ height: calc(100vh - var(--topbar-h) - 28px) !important; resize: none !important; overflow: hidden !important; }
-    .modal.minimized .modalBodyWrap{ display:flex; }
-    #minModal, #restoreModal{ display:none !important; }
+    .modal.minimized{ height: auto !important; resize: none !important; overflow: hidden !important; }
+    .modal.minimized .modalBodyWrap{ display:none; }
 
     .pillRow{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
 
@@ -5278,14 +5288,25 @@ HTML = r"""
     }
     .pill button:hover{ color: var(--text); }
 
+    @media (max-width: 1180px){
+      .stage{ grid-template-columns: minmax(0, 1fr) 340px; }
+      .tableWrap{
+        width:min(760px, calc(100vw - 380px));
+        height:min(760px, calc(100vh - var(--topbarH) - 36px));
+        min-width: 540px;
+        min-height: 540px;
+      }
+    }
+
     @media (max-width: 980px){
-      .stage{ grid-template-columns: 1fr; }
-      .side{ position:relative; top:0; height:auto; overflow:visible; border-left:0; }
-      .tableWrap{ min-height: 860px; }
+      html, body{ overflow-y:auto; }
+      .stage{ grid-template-columns: 1fr; height:auto; min-height: calc(100vh - var(--topbarH)); overflow:visible; }
+      .side{ position:relative; top:0; height:auto; overflow:visible; border-left:0; border-top:1px solid rgba(34,49,90,.8); }
+      .arena{ overflow:visible; }
+      .tableWrap{ width:min(760px, 94vw); height:min(760px, 94vw); min-width: 0; min-height: 540px; }
       .row2{ grid-template-columns: 1fr; }
-      .underTable{ width: min(860px, 92vw); }
+      .underTable{ width: min(860px, 94vw); }
       .modalForm .grid{ grid-template-columns: 1fr; }
-      .modal{ left: 10px; top: calc(var(--topbar-h) + 10px); width: calc(100vw - 20px); height: calc(100vh - var(--topbar-h) - 20px); border-radius: 18px; }
       .modalBarTitle{ max-width: 240px; }
     }
   
@@ -5293,10 +5314,10 @@ HTML = r"""
     /* Mobile responsiveness */
     @media (max-width: 720px){
       body{ overflow-x:hidden; }
-      .topbar{ padding:12px 12px 10px 12px; }
+      .topbar{ padding:12px; gap:10px; }
       .topbarMain{ align-items:flex-start; }
-      .topbarMeta{ justify-content:flex-start; }
-      .actionRail{ padding-bottom: 6px; }
+      .topbarUtility{ width:100%; justify-content:flex-start; }
+      .topbarActions{ display:none; }
       .stage{ grid-template-columns: 1fr !important; }
       .side{ padding: 0 12px 22px 12px; }
       .sideCard{ position: relative; top:auto; max-height:none; }
@@ -5677,8 +5698,7 @@ HTML = r"""
 
 @media (max-width: 720px){
   /* keep top brand, move actions to bottom bar + drawer */
-  .topbarMeta{ display:none !important; }
-  .actionRail{ display:none !important; }
+  .rightmeta{ display:none !important; }
   .mobileBar{
     display:flex;
     position:fixed;
@@ -6012,58 +6032,25 @@ html, body{ max-width:100%; overflow-x:hidden !important; }
   }
 }
 
-
-@media (max-width: 1280px){
-  .stage{ grid-template-columns: minmax(0, 1fr) 360px; }
-  .tableWrap,
-  .underTable{
-    width:min(780px, calc(100vw - 360px - 36px), calc(100vh - var(--topbar-h) - 160px));
-    height:min(780px, calc(100vw - 360px - 36px), calc(100vh - var(--topbar-h) - 160px));
-    min-width: 460px;
-    min-height: 460px;
-  }
-}
-
-@media (max-width: 1080px){
-  html, body{ overflow:auto; }
-  .topbar{ position:sticky; }
-  .stage{ height:auto; min-height:calc(100vh - var(--topbar-h)); grid-template-columns: 1fr; overflow:visible; }
-  .arena{ overflow:visible; }
-  .tableWrap,
-  .underTable{
-    width:min(860px, calc(100vw - 24px), calc(100vh - var(--topbar-h) - 220px));
-    height:min(860px, calc(100vw - 24px), calc(100vh - var(--topbar-h) - 220px));
-    min-width: 360px;
-    min-height: 360px;
-  }
-  .side{
-    position:relative;
-    top:0;
-    height:auto;
-    min-height:0;
-    border-left:0;
-    border-top:1px solid var(--line);
-  }
-}
-
 </style>
 </head>
 <body>
-  <div class="topbar">
+  <div class="topbar" id="topbar">
     <div class="topbarMain">
       <div class="brand">
         <div class="dot"></div>
         <div>{{app_title}}</div>
       </div>
-      <div class="topbarMeta">
-        <div id="modelTag">Model: {{model}}</div>
-        <a class="btn" href="/logout" style="text-decoration:none; display:inline-block;">Logout</a>
+      <div class="topbarUtility">
+        <div class="metaPill" id="modelTag">Model: {{model}}</div>
+        <button class="btn" id="openApiKeyHelpBtn" title="How to get and set your OpenAI API key">OpenAI key help</button>
+        <a class="btn" href="/logout" style="text-decoration:none; display:inline-flex;">Logout</a>
       </div>
     </div>
-    <div class="actionRail" aria-label="Primary actions">
-      <button class="btn" id="assembleBtn">Assemble all</button>
+    <div class="topbarActions">
+      <button class="btn btnPrimary" id="assembleBtn">Assemble all</button>
       <button class="btn" id="frameworkBtn">Core framework</button>
-      <button class="btn" id="manageTeamBtn">Add or dismiss teammates</button>
+      <button class="btn" id="manageTeamBtn">Manage teammates</button>
       <button class="btn" id="createTeamBtn">Create teammate</button>
       <button class="btn" id="installFullBtn">Install full team</button>
       <button class="btn" id="settingsBtn">Settings</button>
@@ -6071,7 +6058,6 @@ html, body{ max-width:100%; overflow-x:hidden !important; }
       <button class="btn" id="crmBtn">Client Center</button>
       <button class="btn" id="imageLibBtn">Image Library</button>
       <button class="btn" id="onboardingBtn" title="Guided onboarding checklist">Next step</button>
-      <button class="btn" id="openApiKeyHelpBtn" title="How to get and set your OpenAI API key">Get your OpenAI key</button>
     </div>
   </div>
 
@@ -7088,19 +7074,6 @@ id="diagOverlay"></div>
 
 <script>
 
-function syncViewportLayout(){
-  try{
-    const top = document.querySelector('.topbar');
-    const h = Math.max(72, (top ? Math.ceil(top.getBoundingClientRect().height) : 72));
-    document.documentElement.style.setProperty('--topbar-h', h + 'px');
-  }catch(e){}
-}
-window.addEventListener('load', syncViewportLayout);
-window.addEventListener('resize', syncViewportLayout);
-if (document.fonts && document.fonts.ready){
-  document.fonts.ready.then(syncViewportLayout).catch(function(){});
-}
-
 if (typeof window.showToast !== "function") {
   window.showToast = function(msg, type) {
     try {
@@ -7258,22 +7231,19 @@ if (typeof window.showToast !== "function") {
 function applyModalPos(){
       const win = $("modalWin");
       if(!win) return;
-
       const rootStyles = getComputedStyle(document.documentElement);
-      const topbarH = parseFloat(rootStyles.getPropertyValue("--topbar-h")) || 96;
-      const margin = window.innerWidth <= 720 ? 8 : 14;
-      const top = Math.max(margin, Math.round(topbarH + margin));
-      const width = Math.max(320, (window.innerWidth || 1200) - (margin * 2));
-      const height = Math.max(320, (window.innerHeight || 800) - top - margin);
-
+      const cssTopbar = parseFloat(rootStyles.getPropertyValue("--topbarH")) || 0;
+      const measuredTopbar = ($("topbar") && $("topbar").offsetHeight) ? $("topbar").offsetHeight : 0;
+      const topbarH = Math.max(cssTopbar, measuredTopbar, 120);
+      const margin = window.innerWidth <= 720 ? 10 : 16;
+      const top = Math.round(topbarH + 10);
+      const width = Math.max(320, window.innerWidth - (margin * 2));
+      const height = Math.max(320, window.innerHeight - top - 12);
       win.style.transform = "none";
       win.style.left = margin + "px";
       win.style.top = top + "px";
       win.style.width = width + "px";
       win.style.height = height + "px";
-
-      try{ saveModalSize({width, height}); }catch(e){}
-      try{ saveModalPos(margin, top); }catch(e){}
     }
 
     function hideAllModalForms(){
@@ -7442,21 +7412,24 @@ function showModal(title, body, imgUrl){
     });
 
     $("minModal").onclick = () => {
-      modalMinimized = false;
-      $("modalWin").classList.remove("minimized");
-      applyModalPos();
+      modalMinimized = true;
+      $("modalWin").classList.add("minimized");
+      $("minModal").style.display = "none";
+      $("restoreModal").style.display = "inline-block";
     };
 
     $("restoreModal").onclick = () => {
       modalMinimized = false;
       $("modalWin").classList.remove("minimized");
-      applyModalPos();
+      $("minModal").style.display = "inline-block";
+      $("restoreModal").style.display = "none";
     };
 
     (function initModalDrag(){
       const bar = $("modalBar");
       const win = $("modalWin");
       if(!bar || !win) return;
+      bar.style.cursor = "default";
       return;
 
       let startX = 0, startY = 0;
@@ -14812,10 +14785,23 @@ ADD_UI_POLISH_V8 = r'''
     });
   }
 
+  function syncViewportLayout(){
+    try{
+      const top = $("topbar");
+      const h = top ? Math.max(120, Math.ceil(top.getBoundingClientRect().height || 0)) : 120;
+      document.documentElement.style.setProperty("--topbarH", h + "px");
+      if($("overlay") && $("overlay").classList.contains("show")){
+        try{ applyModalPos(); }catch(_){ }
+      }
+    }catch(_){ }
+  }
+  window.addEventListener("resize", syncViewportLayout);
+
   // -----------------------------
   // v8: Bootstrap
   // -----------------------------
   document.addEventListener("DOMContentLoaded", function(){
+    try{ syncViewportLayout(); }catch(_){}
     try{ moveDiagnosticsIntoSettings(); }catch(_){}
 
     try{ installRememberSeatHooks(); }catch(_){}
