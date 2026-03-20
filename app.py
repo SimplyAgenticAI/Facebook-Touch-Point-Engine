@@ -4614,19 +4614,24 @@ HTML = r"""
 
     .topbar{
       position: relative;
-      z-index: 60;
-      min-height:56px;
+      z-index: 40;
       display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:14px;
-      padding:12px 14px;
-      background: linear-gradient(180deg, rgba(14,22,48,.96), rgba(14,22,48,.72));
+      flex-direction:column;
+      align-items:stretch;
+      gap:12px;
+      padding:16px 18px 14px;
+      background: linear-gradient(180deg, rgba(14,22,48,.96), rgba(14,22,48,.76));
       border-bottom:1px solid rgba(34,49,90,.8);
       backdrop-filter: blur(10px);
+    }
+    .topbarMain{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
       flex-wrap:wrap;
     }
-    .brand{ display:flex; gap:10px; align-items:center; font-weight:700; letter-spacing:.2px; min-height:44px; }
+    .brand{ display:flex; gap:10px; align-items:center; font-weight:700; letter-spacing:.2px; }
     .dot{
       width:10px;height:10px;border-radius:999px;
       background: radial-gradient(circle at 30% 30%, #fff, #7c3aed);
@@ -4634,35 +4639,31 @@ HTML = r"""
     }
     .rightmeta{
       display:grid;
-      grid-template-columns: repeat(4, minmax(160px, 1fr));
+      width:100%;
+      grid-template-columns: repeat(auto-fit, minmax(160px, max-content));
       gap:10px;
       align-items:stretch;
+      justify-content:start;
       font-size:12px;
       color:var(--muted);
-      justify-content:flex-end;
-      width:min(100%, 760px);
-      margin-left:auto;
     }
-    .rightmeta > #modelTag{
-      grid-column: 1 / -1;
-      display:flex;
-      align-items:center;
-      min-height:40px;
-      padding:0 2px;
-      font-size:13px;
-      font-weight:700;
-      color:#d7defa;
-    }
-    .rightmeta > .btn,
-    .rightmeta > a.btn{
-      width:100%;
-      text-align:center;
+    .rightmeta .btn,
+    .rightmeta a.btn,
+    .rightmeta #modelTag{
       min-height:44px;
       display:flex;
       align-items:center;
       justify-content:center;
-      font-size:14px;
-      font-weight:700;
+      white-space:nowrap;
+      text-align:center;
+    }
+    .headerBreak{ grid-column:1 / -1; height:0; }
+    #modelTag{
+      border:1px solid rgba(42,58,106,.55);
+      background: rgba(11,16,36,.55);
+      border-radius:12px;
+      padding:10px 12px;
+      justify-content:flex-start;
     }
     .btn{
       border:1px solid rgba(42,58,106,.9);
@@ -4691,7 +4692,7 @@ HTML = r"""
     }
 
     .stage{
-      min-height: calc(100vh - 80px);
+      min-height: 0;
       display:grid;
       grid-template-columns: minmax(0, 1fr) 420px;
       align-items:start;
@@ -4980,9 +4981,9 @@ HTML = r"""
 
     .side{
       position: sticky;
-      top: 56px;
+      top: 12px;
       align-self:start;
-      height: calc(100vh - 56px);
+      max-height: calc(100vh - 24px);
       overflow:auto;
       border-left:1px solid rgba(34,49,90,.8);
       background: linear-gradient(180deg, rgba(14,22,48,.92), rgba(10,14,30,.92));
@@ -5253,14 +5254,6 @@ HTML = r"""
     }
     .pill button:hover{ color: var(--text); }
 
-    @media (max-width: 1320px){
-      .rightmeta{ grid-template-columns: repeat(3, minmax(150px, 1fr)); width:min(100%, 620px); }
-    }
-    @media (max-width: 1120px){
-      .topbar{ align-items:flex-start; }
-      .rightmeta{ grid-template-columns: repeat(2, minmax(170px, 1fr)); width:min(100%, 420px); }
-    }
-
     @media (max-width: 980px){
       .stage{ grid-template-columns: 1fr; }
       .side{ position:relative; top:0; height:auto; overflow:visible; border-left:0; }
@@ -5276,8 +5269,9 @@ HTML = r"""
     /* Mobile responsiveness */
     @media (max-width: 720px){
       body{ overflow-x:hidden; }
-      .topbar{ min-height:auto; padding:10px 12px; }
-      .rightmeta{ grid-template-columns:1fr; width:100%; margin-left:0; }
+      .topbar{ padding:12px; gap:10px; }
+      .topbarMain{ gap:10px; }
+      .rightmeta{ grid-template-columns: 1fr 1fr; }
       .stage{ grid-template-columns: 1fr !important; }
       .side{ padding: 0 12px 22px 12px; }
       .sideCard{ position: relative; top:auto; max-height:none; }
@@ -5996,17 +5990,15 @@ html, body{ max-width:100%; overflow-x:hidden !important; }
 </head>
 <body>
   <div class="topbar">
-    <div class="brand">
-      <div class="dot"></div>
-      <div>{{app_title}}</div>
+    <div class="topbarMain">
+      <div class="brand">
+        <div class="dot"></div>
+        <div>{{app_title}}</div>
+      </div>
     </div>
     <div class="rightmeta">
       <div id="modelTag">Model: {{model}}</div>
       <button class="btn" id="assembleBtn">Assemble all</button>
-      <button class="btn" id="imageLibBtn">Image Library</button>
-      <button class="btn" id="onboardingBtn" title="Guided onboarding checklist">Next step</button>
-      <button class="btn" id="openApiKeyHelpBtn" title="How to get and set your OpenAI API key">Get your OpenAI key</button>
-      <a class="btn" href="/logout" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">Logout</a>
       <button class="btn" id="frameworkBtn">Core framework</button>
       <button class="btn" id="manageTeamBtn">Add or dismiss teammates</button>
       <button class="btn" id="createTeamBtn">Create teammate</button>
@@ -6014,6 +6006,11 @@ html, body{ max-width:100%; overflow-x:hidden !important; }
       <button class="btn" id="settingsBtn">Settings</button>
       <button class="btn" id="calendarBtn">Calendar</button>
       <button class="btn" id="crmBtn">Client Center</button>
+      <div class="headerBreak"></div>
+      <button class="btn" id="imageLibBtn">Image Library</button>
+      <button class="btn" id="onboardingBtn" title="Guided onboarding checklist">Next step</button>
+      <button class="btn" id="openApiKeyHelpBtn" title="How to get and set your OpenAI API key">Get your OpenAI key</button>
+      <a class="btn" href="/logout" style="text-decoration:none; display:inline-flex;">Logout</a>
     </div>
   </div>
 
