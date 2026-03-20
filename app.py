@@ -4599,7 +4599,7 @@ HTML = r"""
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes"/>
   <title>{{app_title}}</title>
   <style>
-    :root{ --text:#e6edff; --muted:#b8c4ffcc; }
+    :root{ --text:#e6edff; --muted:#b8c4ffcc; --topbar-h: 148px; }
     *{box-sizing:border-box}
     html, body{ height:auto; min-height:100%; overflow-y:auto; }
     body{
@@ -4614,56 +4614,53 @@ HTML = r"""
 
     .topbar{
       position: relative;
-      z-index: 40;
-      display:flex;
-      flex-direction:column;
-      align-items:stretch;
-      gap:12px;
-      padding:16px 18px 14px;
-      background: linear-gradient(180deg, rgba(14,22,48,.96), rgba(14,22,48,.76));
+      z-index: 60;
+      padding: 12px 14px 14px 14px;
+      background: linear-gradient(180deg, rgba(14,22,48,.96), rgba(14,22,48,.82));
       border-bottom:1px solid rgba(34,49,90,.8);
       backdrop-filter: blur(10px);
     }
-    .topbarMain{
+    .topbarInner{
       display:flex;
-      align-items:center;
+      align-items:flex-start;
       justify-content:space-between;
-      gap:12px;
-      flex-wrap:wrap;
+      gap:16px;
+      max-width: 100%;
     }
-    .brand{ display:flex; gap:10px; align-items:center; font-weight:700; letter-spacing:.2px; }
+    .brand{ display:flex; gap:10px; align-items:center; font-weight:700; letter-spacing:.2px; flex:0 1 auto; min-width:220px; }
     .dot{
       width:10px;height:10px;border-radius:999px;
       background: radial-gradient(circle at 30% 30%, #fff, #7c3aed);
       box-shadow: 0 0 14px rgba(124,58,237,.55);
     }
     .rightmeta{
-      display:grid;
-      width:100%;
-      grid-template-columns: repeat(auto-fit, minmax(160px, max-content));
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
       gap:10px;
-      align-items:stretch;
-      justify-content:start;
+      min-width:0;
+      flex: 1 1 auto;
       font-size:12px;
       color:var(--muted);
     }
-    .rightmeta .btn,
-    .rightmeta a.btn,
-    .rightmeta #modelTag{
-      min-height:44px;
+    .metaLine{
       display:flex;
-      align-items:center;
-      justify-content:center;
-      white-space:nowrap;
-      text-align:center;
+      justify-content:flex-end;
+      width:100%;
     }
-    .headerBreak{ grid-column:1 / -1; height:0; }
-    #modelTag{
-      border:1px solid rgba(42,58,106,.55);
-      background: rgba(11,16,36,.55);
-      border-radius:12px;
-      padding:10px 12px;
-      justify-content:flex-start;
+    .actionRows{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      width:100%;
+      align-items:flex-end;
+    }
+    .actionRow{
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      gap:10px;
+      width:100%;
     }
     .btn{
       border:1px solid rgba(42,58,106,.9);
@@ -4692,7 +4689,7 @@ HTML = r"""
     }
 
     .stage{
-      min-height: 0;
+      min-height: calc(100vh - var(--topbar-h));
       display:grid;
       grid-template-columns: minmax(0, 1fr) 420px;
       align-items:start;
@@ -4981,9 +4978,10 @@ HTML = r"""
 
     .side{
       position: sticky;
-      top: 12px;
+      top: 0;
       align-self:start;
-      max-height: calc(100vh - 24px);
+      max-height: calc(100vh - 12px);
+      min-height: 520px;
       overflow:auto;
       border-left:1px solid rgba(34,49,90,.8);
       background: linear-gradient(180deg, rgba(14,22,48,.92), rgba(10,14,30,.92));
@@ -5269,9 +5267,10 @@ HTML = r"""
     /* Mobile responsiveness */
     @media (max-width: 720px){
       body{ overflow-x:hidden; }
-      .topbar{ padding:12px; gap:10px; }
-      .topbarMain{ gap:10px; }
-      .rightmeta{ grid-template-columns: 1fr 1fr; }
+      .topbar{ height:auto; }
+      .topbarInner{ flex-wrap:wrap; height:auto; gap:10px; padding:0; }
+      .rightmeta{ justify-content:flex-start; align-items:stretch; }
+      .metaLine, .actionRows, .actionRow{ justify-content:flex-start; }
       .stage{ grid-template-columns: 1fr !important; }
       .side{ padding: 0 12px 22px 12px; }
       .sideCard{ position: relative; top:auto; max-height:none; }
@@ -5989,28 +5988,33 @@ html, body{ max-width:100%; overflow-x:hidden !important; }
 </style>
 </head>
 <body>
-  <div class="topbar">
-    <div class="topbarMain">
+  <div class="topbar" id="topbar">
+    <div class="topbarInner">
       <div class="brand">
         <div class="dot"></div>
         <div>{{app_title}}</div>
       </div>
-    </div>
-    <div class="rightmeta">
-      <div id="modelTag">Model: {{model}}</div>
-      <button class="btn" id="assembleBtn">Assemble all</button>
-      <button class="btn" id="frameworkBtn">Core framework</button>
-      <button class="btn" id="manageTeamBtn">Add or dismiss teammates</button>
-      <button class="btn" id="createTeamBtn">Create teammate</button>
-      <button class="btn" id="installFullBtn">Install full team</button>
-      <button class="btn" id="settingsBtn">Settings</button>
-      <button class="btn" id="calendarBtn">Calendar</button>
-      <button class="btn" id="crmBtn">Client Center</button>
-      <div class="headerBreak"></div>
-      <button class="btn" id="imageLibBtn">Image Library</button>
-      <button class="btn" id="onboardingBtn" title="Guided onboarding checklist">Next step</button>
-      <button class="btn" id="openApiKeyHelpBtn" title="How to get and set your OpenAI API key">Get your OpenAI key</button>
-      <a class="btn" href="/logout" style="text-decoration:none; display:inline-flex;">Logout</a>
+      <div class="rightmeta">
+        <div class="metaLine"><div id="modelTag">Model: {{model}}</div></div>
+        <div class="actionRows">
+          <div class="actionRow">
+            <button class="btn" id="assembleBtn">Assemble all</button>
+            <button class="btn" id="frameworkBtn">Core framework</button>
+            <button class="btn" id="manageTeamBtn">Add or dismiss teammates</button>
+            <button class="btn" id="createTeamBtn">Create teammate</button>
+            <button class="btn" id="installFullBtn">Install full team</button>
+            <button class="btn" id="settingsBtn">Settings</button>
+            <button class="btn" id="calendarBtn">Calendar</button>
+            <button class="btn" id="crmBtn">Client Center</button>
+          </div>
+          <div class="actionRow actionRowSecondary">
+            <button class="btn" id="imageLibBtn">Image Library</button>
+            <button class="btn" id="onboardingBtn" title="Guided onboarding checklist">Next step</button>
+            <button class="btn" id="openApiKeyHelpBtn" title="How to get and set your OpenAI API key">Get your OpenAI key</button>
+            <a class="btn" href="/logout" style="text-decoration:none; display:inline-block;">Logout</a>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -11638,6 +11642,17 @@ if(!window.__stackTickInterval){
   }, 20000);
 }
 // API key help button
+function syncTopbarHeight(){
+  try{
+    const tb = document.getElementById("topbar");
+    if(!tb) return;
+    const h = Math.max(64, Math.ceil(tb.getBoundingClientRect().height));
+    document.documentElement.style.setProperty("--topbar-h", h + "px");
+  }catch(e){}
+}
+window.addEventListener("load", syncTopbarHeight);
+window.addEventListener("resize", syncTopbarHeight);
+setTimeout(syncTopbarHeight, 0);
 if($("openApiKeyHelpBtn")) $("openApiKeyHelpBtn").onclick = () => openApiKeyHelp();
 if($("closeApiKeyHelpBtn")) $("closeApiKeyHelpBtn").onclick = () => { try{ document.body.style.overflow = ""; }catch(_){ } hideModal(); };
 
