@@ -4613,19 +4613,12 @@ HTML = r"""
     }
 
     .topbar{
-      position: relative;
-      z-index: 40;
-      padding: 14px;
-      background: linear-gradient(180deg, rgba(14,22,48,.96), rgba(14,22,48,.84));
+      position: sticky; top: 0; z-index: 60;
+      height:56px; display:flex; align-items:center; justify-content:space-between;
+      padding:0 14px;
+      background: linear-gradient(180deg, rgba(14,22,48,.92), rgba(14,22,48,.60));
       border-bottom:1px solid rgba(34,49,90,.8);
       backdrop-filter: blur(10px);
-    }
-    .topbarHeader{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      flex-wrap:wrap;
     }
     .brand{ display:flex; gap:10px; align-items:center; font-weight:700; letter-spacing:.2px; }
     .dot{
@@ -4633,41 +4626,7 @@ HTML = r"""
       background: radial-gradient(circle at 30% 30%, #fff, #7c3aed);
       box-shadow: 0 0 14px rgba(124,58,237,.55);
     }
-    .rightmeta{
-      margin-top: 12px;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-      font-size:12px;
-      color:var(--muted);
-    }
-    .metaRow{
-      display:flex;
-      justify-content:flex-end;
-      align-items:center;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-    .controlGrid{
-      display:grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap:10px;
-      width:100%;
-    }
-    .controlGrid .btn,
-    .controlGrid a.btn{
-      width:100%;
-      min-height:46px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      text-align:center;
-      white-space:normal;
-      font-size:14px;
-      font-weight:700;
-      line-height:1.25;
-      text-decoration:none;
-    }
+    .rightmeta{ display:flex; gap:10px; align-items:center; font-size:12px; color:var(--muted); flex-wrap:wrap; justify-content:flex-end; }
     .btn{
       border:1px solid rgba(42,58,106,.9);
       background: rgba(11,16,36,.9);
@@ -4695,10 +4654,10 @@ HTML = r"""
     }
 
     .stage{
+      min-height: calc(100vh - 56px);
       display:grid;
-      grid-template-columns: minmax(0, 1fr) 400px;
+      grid-template-columns: 1fr 420px;
       align-items:start;
-      gap: 0;
     }
 
     .arena{
@@ -4984,9 +4943,9 @@ HTML = r"""
 
     .side{
       position: sticky;
-      top: 12px;
+      top: 56px;
       align-self:start;
-      height: calc(100vh - 24px);
+      height: calc(100vh - 56px);
       overflow:auto;
       border-left:1px solid rgba(34,49,90,.8);
       background: linear-gradient(180deg, rgba(14,22,48,.92), rgba(10,14,30,.92));
@@ -5257,16 +5216,6 @@ HTML = r"""
     }
     .pill button:hover{ color: var(--text); }
 
-    @media (max-width: 1320px){
-      .controlGrid{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .stage{ grid-template-columns: minmax(0, 1fr) 360px; }
-    }
-
-    @media (max-width: 1100px){
-      .controlGrid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .topbarHeader{ align-items:flex-start; }
-    }
-
     @media (max-width: 980px){
       .stage{ grid-template-columns: 1fr; }
       .side{ position:relative; top:0; height:auto; overflow:visible; border-left:0; }
@@ -5282,10 +5231,9 @@ HTML = r"""
     /* Mobile responsiveness */
     @media (max-width: 720px){
       body{ overflow-x:hidden; }
-      .topbar{ padding:12px; }
-      .topbarHeader{ align-items:flex-start; }
-      .metaRow{ justify-content:flex-start; }
-      .controlGrid{ grid-template-columns: 1fr; }
+      .topbar{ height:auto; }
+      .topbarInner{ flex-wrap:wrap; height:auto; gap:10px; padding:10px 12px; }
+      .rightmeta{ justify-content:flex-start; }
       .stage{ grid-template-columns: 1fr !important; }
       .side{ padding: 0 12px 22px 12px; }
       .sideCard{ position: relative; top:auto; max-height:none; }
@@ -6000,37 +5948,203 @@ html, body{ max-width:100%; overflow-x:hidden !important; }
   }
 }
 
+
+/* ===== CLEAN DESKTOP LAYOUT REBUILD v14 ===== */
+:root{
+  --shell-max: 1680px;
+  --shell-gap: 18px;
+  --header-pad: 18px;
+  --panel-bg: rgba(11,16,36,.92);
+  --panel-border: rgba(61,81,142,.78);
+  --panel-soft: rgba(18,27,58,.96);
+}
+html, body{
+  height: auto !important;
+  min-height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scroll-padding-top: 16px;
+}
+body{
+  overflow-anchor: none;
+}
+.topbar{
+  position: relative !important;
+  top: auto !important;
+  z-index: 8 !important;
+  height: auto !important;
+  display: block !important;
+  padding: var(--header-pad) !important;
+  background: transparent !important;
+  border-bottom: 0 !important;
+  backdrop-filter: none !important;
+}
+.topbarShell{
+  width: min(var(--shell-max), calc(100vw - 32px));
+  margin: 0 auto;
+  background: linear-gradient(180deg, rgba(18,27,58,.96), rgba(10,14,30,.97));
+  border: 1px solid rgba(86,103,160,.52);
+  border-radius: 24px;
+  box-shadow: 0 20px 54px rgba(0,0,0,.34), 0 0 0 1px rgba(255,255,255,.03) inset;
+  padding: 20px;
+}
+.topbarHead{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:16px;
+}
+.brandLarge{ align-items:flex-start; gap:14px; }
+.brandTitle{ font-size: 24px; font-weight: 800; line-height: 1.15; }
+.brandSub{ font-size: 14px; color: rgba(210,221,255,.76); margin-top: 4px; }
+.topbarMeta{ display:flex; align-items:center; justify-content:flex-end; gap:10px; flex-wrap:wrap; }
+.modelTagPill{
+  display:inline-flex; align-items:center; justify-content:center;
+  min-height: 44px; padding: 10px 14px;
+  border-radius: 14px;
+  border:1px solid rgba(88,102,158,.62);
+  background: rgba(9,13,29,.88);
+  color:#f5f7ff;
+  font-size:14px;
+  font-weight:700;
+}
+.commandDeck{ display:flex; flex-direction:column; gap:12px; }
+.commandRow{
+  display:grid;
+  gap:12px;
+  width:100%;
+}
+.commandRowPrimary{
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.commandRowSecondary{
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.btn.btnDeck,
+.commandRow .btn{
+  width:100%;
+  min-height: 52px;
+  padding: 12px 14px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: normal;
+}
+.stage{
+  width: min(var(--shell-max), calc(100vw - 32px)) !important;
+  margin: 0 auto 28px auto !important;
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 360px !important;
+  align-items: start !important;
+  gap: var(--shell-gap) !important;
+  padding: 0 var(--header-pad) 24px var(--header-pad) !important;
+}
+.arena{
+  padding: 0 !important;
+  overflow: visible !important;
+}
+.underTable{
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 18px auto 24px auto !important;
+}
+.side{
+  position: sticky !important;
+  top: 18px !important;
+  align-self: start !important;
+  height: calc(100vh - 36px) !important;
+  max-height: calc(100vh - 36px) !important;
+  border-left: 0 !important;
+  border: 1px solid rgba(86,103,160,.42) !important;
+  border-radius: 22px !important;
+  padding: 14px !important;
+  background: linear-gradient(180deg, rgba(14,22,48,.98), rgba(9,13,29,.98)) !important;
+  box-shadow: 0 16px 40px rgba(0,0,0,.28) !important;
+}
+.sideCard,
+.groupCard,
+.operator{
+  background: linear-gradient(180deg, rgba(17,26,56,.96), rgba(10,14,30,.96)) !important;
+  border: 1px solid rgba(86,103,160,.52) !important;
+  box-shadow: 0 14px 32px rgba(0,0,0,.28) !important;
+}
+.thread,
+.followBox,
+.field,
+.opText{
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+}
+.seatName{ font-size: 15px !important; font-weight: 800 !important; }
+.seatRole, .seatStatus, .opTitle .t2, .sideTitle .h2{ font-size: 13px !important; }
+.modal{
+  width: min(1320px, calc(100vw - 28px)) !important;
+  height: min(92vh, 980px) !important;
+  max-height: 92vh !important;
+}
+@media (max-width: 1380px){
+  .commandRowPrimary{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .stage{ grid-template-columns: minmax(0, 1fr) 330px !important; }
+}
+@media (max-width: 1180px){
+  .topbarShell{ width: min(var(--shell-max), calc(100vw - 24px)); padding: 16px; }
+  .topbarHead{ flex-direction: column; align-items: stretch; }
+  .commandRowPrimary{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .commandRowSecondary{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stage{ grid-template-columns: 1fr !important; width: min(var(--shell-max), calc(100vw - 24px)) !important; }
+  .side{
+    position: relative !important;
+    top: auto !important;
+    height: auto !important;
+    max-height: none !important;
+    margin-top: 18px !important;
+  }
+}
+@media (max-width: 700px){
+  .topbar{ display:none !important; }
+}
+
 </style>
 </head>
 <body>
   <div class="topbar">
-    <div class="topbarHeader">
-      <div class="brand">
-        <div class="dot"></div>
-        <div>{{app_title}}</div>
+    <div class="topbarShell">
+      <div class="topbarHead">
+        <div class="brand brandLarge">
+          <div class="dot"></div>
+          <div>
+            <div class="brandTitle">{{app_title}}</div>
+            <div class="brandSub">Simply Agentic command center</div>
+          </div>
+        </div>
+        <div class="topbarMeta">
+          <div id="modelTag" class="modelTagPill">Model: {{model}}</div>
+        </div>
       </div>
-      <div class="metaRow">
-        <div id="modelTag">Model: {{model}}</div>
-      </div>
-    </div>
-    <div class="rightmeta">
-      <div class="controlGrid">
-        <button class="btn" id="assembleBtn">Assemble all</button>
-        <button class="btn" id="frameworkBtn">Core framework</button>
-        <button class="btn" id="manageTeamBtn">Add or dismiss teammates</button>
-        <button class="btn" id="createTeamBtn">Create teammate</button>
-      </div>
-      <div class="controlGrid">
-        <button class="btn" id="installFullBtn">Install full team</button>
-        <button class="btn" id="settingsBtn">Settings</button>
-        <button class="btn" id="calendarBtn">Calendar</button>
-        <button class="btn" id="crmBtn">Client Center</button>
-      </div>
-      <div class="controlGrid">
-        <button class="btn" id="imageLibBtn">Image Library</button>
-        <button class="btn" id="onboardingBtn" title="Guided onboarding checklist">Next step</button>
-        <button class="btn" id="openApiKeyHelpBtn" title="How to get and set your OpenAI API key">Get your OpenAI key</button>
-        <a class="btn" href="/logout">Logout</a>
+
+      <div class="commandDeck">
+        <div class="commandRow commandRowPrimary">
+          <button class="btn btnDeck" id="assembleBtn">Assemble all</button>
+          <button class="btn btnDeck" id="frameworkBtn">Core framework</button>
+          <button class="btn btnDeck" id="manageTeamBtn">Add or dismiss teammates</button>
+          <button class="btn btnDeck" id="createTeamBtn">Create teammate</button>
+          <button class="btn btnDeck" id="installFullBtn">Install full team</button>
+          <button class="btn btnDeck" id="settingsBtn">Settings</button>
+          <button class="btn btnDeck" id="calendarBtn">Calendar</button>
+          <button class="btn btnDeck" id="crmBtn">Client Center</button>
+        </div>
+        <div class="commandRow commandRowSecondary">
+          <button class="btn btnDeck" id="imageLibBtn">Image Library</button>
+          <button class="btn btnDeck btnPrimary" id="onboardingBtn" title="Guided onboarding checklist">Next step</button>
+          <button class="btn btnDeck" id="openApiKeyHelpBtn" title="How to get and set your OpenAI API key">Get your OpenAI key</button>
+          <a class="btn btnDeck" href="/logout" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">Logout</a>
+        </div>
       </div>
     </div>
   </div>
