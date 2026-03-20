@@ -4613,12 +4613,19 @@ HTML = r"""
     }
 
     .topbar{
-      position: sticky; top: 0; z-index: 60;
-      height:56px; display:flex; align-items:center; justify-content:space-between;
-      padding:0 14px;
-      background: linear-gradient(180deg, rgba(14,22,48,.92), rgba(14,22,48,.60));
+      position: relative;
+      z-index: 40;
+      padding: 14px;
+      background: linear-gradient(180deg, rgba(14,22,48,.96), rgba(14,22,48,.84));
       border-bottom:1px solid rgba(34,49,90,.8);
       backdrop-filter: blur(10px);
+    }
+    .topbarHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
     }
     .brand{ display:flex; gap:10px; align-items:center; font-weight:700; letter-spacing:.2px; }
     .dot{
@@ -4626,7 +4633,41 @@ HTML = r"""
       background: radial-gradient(circle at 30% 30%, #fff, #7c3aed);
       box-shadow: 0 0 14px rgba(124,58,237,.55);
     }
-    .rightmeta{ display:flex; gap:10px; align-items:center; font-size:12px; color:var(--muted); flex-wrap:wrap; justify-content:flex-end; }
+    .rightmeta{
+      margin-top: 12px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      font-size:12px;
+      color:var(--muted);
+    }
+    .metaRow{
+      display:flex;
+      justify-content:flex-end;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .controlGrid{
+      display:grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap:10px;
+      width:100%;
+    }
+    .controlGrid .btn,
+    .controlGrid a.btn{
+      width:100%;
+      min-height:46px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      white-space:normal;
+      font-size:14px;
+      font-weight:700;
+      line-height:1.25;
+      text-decoration:none;
+    }
     .btn{
       border:1px solid rgba(42,58,106,.9);
       background: rgba(11,16,36,.9);
@@ -4654,10 +4695,10 @@ HTML = r"""
     }
 
     .stage{
-      min-height: calc(100vh - 56px);
       display:grid;
-      grid-template-columns: 1fr 420px;
+      grid-template-columns: minmax(0, 1fr) 400px;
       align-items:start;
+      gap: 0;
     }
 
     .arena{
@@ -4943,9 +4984,9 @@ HTML = r"""
 
     .side{
       position: sticky;
-      top: 56px;
+      top: 12px;
       align-self:start;
-      height: calc(100vh - 56px);
+      height: calc(100vh - 24px);
       overflow:auto;
       border-left:1px solid rgba(34,49,90,.8);
       background: linear-gradient(180deg, rgba(14,22,48,.92), rgba(10,14,30,.92));
@@ -5216,6 +5257,16 @@ HTML = r"""
     }
     .pill button:hover{ color: var(--text); }
 
+    @media (max-width: 1320px){
+      .controlGrid{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .stage{ grid-template-columns: minmax(0, 1fr) 360px; }
+    }
+
+    @media (max-width: 1100px){
+      .controlGrid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .topbarHeader{ align-items:flex-start; }
+    }
+
     @media (max-width: 980px){
       .stage{ grid-template-columns: 1fr; }
       .side{ position:relative; top:0; height:auto; overflow:visible; border-left:0; }
@@ -5231,9 +5282,10 @@ HTML = r"""
     /* Mobile responsiveness */
     @media (max-width: 720px){
       body{ overflow-x:hidden; }
-      .topbar{ height:auto; }
-      .topbarInner{ flex-wrap:wrap; height:auto; gap:10px; padding:10px 12px; }
-      .rightmeta{ justify-content:flex-start; }
+      .topbar{ padding:12px; }
+      .topbarHeader{ align-items:flex-start; }
+      .metaRow{ justify-content:flex-start; }
+      .controlGrid{ grid-template-columns: 1fr; }
       .stage{ grid-template-columns: 1fr !important; }
       .side{ padding: 0 12px 22px 12px; }
       .sideCard{ position: relative; top:auto; max-height:none; }
@@ -5948,123 +6000,37 @@ html, body{ max-width:100%; overflow-x:hidden !important; }
   }
 }
 
-
-/* ===== Layout stability override v12 ===== */
-:root{ --header-h: 0px; }
-html, body{ height:100%; min-height:100%; overflow-x:hidden !important; overflow-y:auto !important; }
-body{ min-width: 320px; }
-.topbar{
-  position: sticky;
-  top: 0;
-  z-index: 80;
-  height: auto !important;
-  display: block !important;
-  padding: 12px 14px 14px 14px !important;
-}
-.topbarMain{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  flex-wrap:wrap;
-  margin-bottom: 10px;
-}
-.modelPill{
-  display:inline-flex;
-  align-items:center;
-  min-height: 42px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  border:1px solid rgba(78,97,156,.85);
-  background: rgba(11,16,36,.88);
-  color: var(--text);
-  font-size: 13px;
-  font-weight: 700;
-  box-shadow: inset 0 0 0 1px rgba(247,211,106,.10);
-}
-.rightmeta{
-  display:flex !important;
-  flex-direction:column;
-  align-items:stretch;
-  gap:10px;
-  width:100%;
-  font-size:12px;
-  color:var(--muted);
-}
-.headerActionsRow{
-  display:grid;
-  gap:10px;
-  width:100%;
-}
-.headerActionsPrimary{
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-}
-.headerActionsSecondary{
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-}
-.headerActionsRow .btn,
-.headerActionsRow a.btn{
-  width:100%;
-  min-height: 46px;
-  font-size: 14px;
-  font-weight: 700;
-  white-space: normal;
-  text-align:center;
-  justify-content:center;
-}
-.stage{
-  min-height: calc(100vh - var(--header-h, 0px)) !important;
-  align-items: start;
-}
-.arena{
-  min-width: 0;
-  padding-top: 18px;
-}
-.side{
-  top: var(--header-h, 0px) !important;
-  height: calc(100vh - var(--header-h, 0px)) !important;
-}
-@media (max-width: 1180px){
-  .stage{ grid-template-columns: 1fr !important; }
-  .side{
-    position: relative !important;
-    top: 0 !important;
-    height: auto !important;
-    overflow: visible !important;
-    border-left: 0 !important;
-  }
-}
-@media (max-width: 720px){
-  .topbar{ display:none !important; }
-}
-
 </style>
 </head>
 <body>
-  <div class="topbar" id="topbar">
-    <div class="topbarMain">
+  <div class="topbar">
+    <div class="topbarHeader">
       <div class="brand">
         <div class="dot"></div>
         <div>{{app_title}}</div>
       </div>
-      <div class="modelPill" id="modelTag">Model: {{model}}</div>
+      <div class="metaRow">
+        <div id="modelTag">Model: {{model}}</div>
+      </div>
     </div>
     <div class="rightmeta">
-      <div class="headerActionsRow headerActionsPrimary">
+      <div class="controlGrid">
         <button class="btn" id="assembleBtn">Assemble all</button>
         <button class="btn" id="frameworkBtn">Core framework</button>
         <button class="btn" id="manageTeamBtn">Add or dismiss teammates</button>
         <button class="btn" id="createTeamBtn">Create teammate</button>
+      </div>
+      <div class="controlGrid">
         <button class="btn" id="installFullBtn">Install full team</button>
         <button class="btn" id="settingsBtn">Settings</button>
         <button class="btn" id="calendarBtn">Calendar</button>
         <button class="btn" id="crmBtn">Client Center</button>
       </div>
-      <div class="headerActionsRow headerActionsSecondary">
+      <div class="controlGrid">
         <button class="btn" id="imageLibBtn">Image Library</button>
         <button class="btn" id="onboardingBtn" title="Guided onboarding checklist">Next step</button>
         <button class="btn" id="openApiKeyHelpBtn" title="How to get and set your OpenAI API key">Get your OpenAI key</button>
-        <a class="btn" href="/logout" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">Logout</a>
+        <a class="btn" href="/logout">Logout</a>
       </div>
     </div>
   </div>
@@ -7115,37 +7081,6 @@ if (typeof window.showToast !== "function") {
     }
   };
 }
-
-
-    function syncHeaderLayout(){
-      try{
-        const topbar = document.getElementById("topbar");
-        const mobileBar = document.getElementById("mobileBar");
-        let h = 0;
-        if (topbar && window.getComputedStyle(topbar).display !== "none") {
-          h = Math.ceil(topbar.getBoundingClientRect().height || 0);
-        }
-        if ((!h || h < 1) && mobileBar && window.getComputedStyle(mobileBar).display !== "none") {
-          h = Math.ceil(mobileBar.getBoundingClientRect().height || 0);
-        }
-        document.documentElement.style.setProperty("--header-h", `${Math.max(0, h)}px`);
-      }catch(err){}
-    }
-
-    window.addEventListener("load", syncHeaderLayout);
-    window.addEventListener("resize", syncHeaderLayout);
-    try{
-      const _rzObs = new ResizeObserver(() => syncHeaderLayout());
-      window.addEventListener("DOMContentLoaded", ()=>{
-        const tb = document.getElementById("topbar");
-        const mb = document.getElementById("mobileBar");
-        if (tb) _rzObs.observe(tb);
-        if (mb) _rzObs.observe(mb);
-        syncHeaderLayout();
-      });
-    }catch(err){
-      window.addEventListener("DOMContentLoaded", syncHeaderLayout);
-    }
 
 
     const POS = [
