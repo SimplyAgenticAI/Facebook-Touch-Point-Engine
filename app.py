@@ -4071,52 +4071,6 @@ AUTH_BASE_CSS = r"""
     white-space: nowrap !important;
   }
 }
-
-/* ===== FINAL FIT / HEADER CLEANUP v9 ===== */
-#modelTag{
-  font-size: 13px;
-  font-weight: 700;
-  color: rgba(230,237,255,.92);
-  white-space: nowrap;
-}
-.side{
-  position: relative;
-  z-index: 1;
-}
-.topbar,
-.topbar *{
-  overflow: visible;
-}
-@media (min-width: 1025px){
-  .topbar{
-    --toolbar-btn-min: 152px;
-  }
-}
-@media (max-width: 1180px){
-  .topbar{
-    --toolbar-btn-min: 148px;
-  }
-  .stage{
-    grid-template-columns: minmax(0, 1fr) 360px;
-  }
-}
-@media (max-width: 1024px){
-  .topbar{
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-  .metaTop{
-    justify-content:flex-start;
-  }
-  .metaRow{
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    justify-content:stretch;
-  }
-  .stage{
-    grid-template-columns: 1fr;
-  }
-}
-
 </style>
 """
 
@@ -4659,70 +4613,56 @@ HTML = r"""
     }
 
     .topbar{
-      --toolbar-btn-min: 160px;
-      position: sticky;
-      top: 0;
+      position: relative;
       z-index: 60;
-      display:grid;
-      grid-template-columns: minmax(220px, auto) minmax(0, 1fr);
-      gap: 10px 18px;
-      align-items:start;
-      padding:12px 14px 14px;
-      background: linear-gradient(180deg, rgba(14,22,48,.96), rgba(14,22,48,.82));
-      border-bottom:1px solid rgba(54,71,122,.92);
-      backdrop-filter: blur(12px);
-      box-shadow: 0 10px 34px rgba(5,8,18,.28);
-    }
-    .brand{
+      min-height:56px;
       display:flex;
-      gap:10px;
-      align-items:center;
-      font-weight:800;
-      letter-spacing:.2px;
-      min-height:44px;
-      padding-top:4px;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+      padding:12px 14px;
+      background: linear-gradient(180deg, rgba(14,22,48,.96), rgba(14,22,48,.72));
+      border-bottom:1px solid rgba(34,49,90,.8);
+      backdrop-filter: blur(10px);
+      flex-wrap:wrap;
     }
+    .brand{ display:flex; gap:10px; align-items:center; font-weight:700; letter-spacing:.2px; min-height:44px; }
     .dot{
       width:10px;height:10px;border-radius:999px;
       background: radial-gradient(circle at 30% 30%, #fff, #7c3aed);
       box-shadow: 0 0 14px rgba(124,58,237,.55);
     }
     .rightmeta{
-      display:flex;
-      flex-direction:column;
+      display:grid;
+      grid-template-columns: repeat(4, minmax(160px, 1fr));
       gap:10px;
-      min-width:0;
+      align-items:stretch;
       font-size:12px;
       color:var(--muted);
-      align-items:stretch;
-    }
-    .metaTop{
-      display:flex;
       justify-content:flex-end;
-      align-items:center;
-      gap:12px;
-      min-height:18px;
+      width:min(100%, 760px);
+      margin-left:auto;
     }
-    .metaRows{
+    .rightmeta > #modelTag{
+      grid-column: 1 / -1;
       display:flex;
-      flex-direction:column;
-      gap:10px;
-      align-items:stretch;
-      min-width:0;
+      align-items:center;
+      min-height:40px;
+      padding:0 2px;
+      font-size:13px;
+      font-weight:700;
+      color:#d7defa;
     }
-    .metaRow{
-      display:grid;
-      grid-template-columns: repeat(auto-fit, minmax(var(--toolbar-btn-min), max-content));
-      justify-content:end;
-      gap:10px;
-      min-width:0;
-    }
-    .metaRow .btn,
-    .metaRow a.btn{
-      min-width:0;
+    .rightmeta > .btn,
+    .rightmeta > a.btn{
       width:100%;
       text-align:center;
-      white-space:nowrap;
+      min-height:44px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:14px;
+      font-weight:700;
     }
     .btn{
       border:1px solid rgba(42,58,106,.9);
@@ -4751,7 +4691,7 @@ HTML = r"""
     }
 
     .stage{
-      min-height: calc(100vh - var(--topbar-h, 108px));
+      min-height: calc(100vh - 80px);
       display:grid;
       grid-template-columns: minmax(0, 1fr) 420px;
       align-items:start;
@@ -5313,6 +5253,14 @@ HTML = r"""
     }
     .pill button:hover{ color: var(--text); }
 
+    @media (max-width: 1320px){
+      .rightmeta{ grid-template-columns: repeat(3, minmax(150px, 1fr)); width:min(100%, 620px); }
+    }
+    @media (max-width: 1120px){
+      .topbar{ align-items:flex-start; }
+      .rightmeta{ grid-template-columns: repeat(2, minmax(170px, 1fr)); width:min(100%, 420px); }
+    }
+
     @media (max-width: 980px){
       .stage{ grid-template-columns: 1fr; }
       .side{ position:relative; top:0; height:auto; overflow:visible; border-left:0; }
@@ -5328,17 +5276,8 @@ HTML = r"""
     /* Mobile responsiveness */
     @media (max-width: 720px){
       body{ overflow-x:hidden; }
-      .topbar{
-        grid-template-columns: 1fr;
-        gap:10px;
-        padding:10px 12px 12px;
-      }
-      .rightmeta{ align-items:stretch; }
-      .metaTop{ justify-content:flex-start; }
-      .metaRow{
-        grid-template-columns: repeat(auto-fit, minmax(144px, 1fr));
-        justify-content:stretch;
-      }
+      .topbar{ min-height:auto; padding:10px 12px; }
+      .rightmeta{ grid-template-columns:1fr; width:100%; margin-left:0; }
       .stage{ grid-template-columns: 1fr !important; }
       .side{ padding: 0 12px 22px 12px; }
       .sideCard{ position: relative; top:auto; max-height:none; }
@@ -6062,27 +6001,19 @@ html, body{ max-width:100%; overflow-x:hidden !important; }
       <div>{{app_title}}</div>
     </div>
     <div class="rightmeta">
-      <div class="metaTop">
-        <div id="modelTag">Model: {{model}}</div>
-      </div>
-      <div class="metaRows">
-        <div class="metaRow metaRowPrimary">
-          <button class="btn" id="assembleBtn">Assemble all</button>
-          <button class="btn" id="frameworkBtn">Core framework</button>
-          <button class="btn" id="manageTeamBtn">Add or dismiss teammates</button>
-          <button class="btn" id="createTeamBtn">Create teammate</button>
-          <button class="btn" id="installFullBtn">Install full team</button>
-          <button class="btn" id="settingsBtn">Settings</button>
-          <button class="btn" id="calendarBtn">Calendar</button>
-          <button class="btn" id="crmBtn">Client Center</button>
-        </div>
-        <div class="metaRow metaRowUtility">
-          <button class="btn" id="imageLibBtn">Image Library</button>
-          <button class="btn" id="onboardingBtn" title="Guided onboarding checklist">Next step</button>
-          <button class="btn" id="openApiKeyHelpBtn" title="How to get and set your OpenAI API key">Get your OpenAI key</button>
-          <a class="btn" href="/logout" style="text-decoration:none; display:inline-block;">Logout</a>
-        </div>
-      </div>
+      <div id="modelTag">Model: {{model}}</div>
+      <button class="btn" id="assembleBtn">Assemble all</button>
+      <button class="btn" id="imageLibBtn">Image Library</button>
+      <button class="btn" id="onboardingBtn" title="Guided onboarding checklist">Next step</button>
+      <button class="btn" id="openApiKeyHelpBtn" title="How to get and set your OpenAI API key">Get your OpenAI key</button>
+      <a class="btn" href="/logout" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">Logout</a>
+      <button class="btn" id="frameworkBtn">Core framework</button>
+      <button class="btn" id="manageTeamBtn">Add or dismiss teammates</button>
+      <button class="btn" id="createTeamBtn">Create teammate</button>
+      <button class="btn" id="installFullBtn">Install full team</button>
+      <button class="btn" id="settingsBtn">Settings</button>
+      <button class="btn" id="calendarBtn">Calendar</button>
+      <button class="btn" id="crmBtn">Client Center</button>
     </div>
   </div>
 
@@ -7098,19 +7029,6 @@ id="diagOverlay"></div>
   </div>
 
 <script>
-
-function syncTopbarHeight(){
-  try{
-    const topbar = document.querySelector('.topbar');
-    if(!topbar) return;
-    const h = Math.max(72, Math.ceil(topbar.getBoundingClientRect().height));
-    document.documentElement.style.setProperty('--topbar-h', h + 'px');
-  }catch(err){}
-}
-window.addEventListener('load', syncTopbarHeight);
-window.addEventListener('resize', syncTopbarHeight);
-setTimeout(syncTopbarHeight, 60);
-
 
 if (typeof window.showToast !== "function") {
   window.showToast = function(msg, type) {
